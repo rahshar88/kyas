@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+coverage/
+apps/mobile/ios/
+apps/mobile/android/
+pnpm-lock.yaml
+*.tsbuildinfo
+docs/product/master-specification.md

@@ -1,0 +1,58 @@
+# Local Supabase configuration for KyaScene development (spec §4.3, §5.2).
+#
+# This drives `supabase start` on a developer machine only. Beta and production are
+# separate hosted projects with separate credentials, storage buckets and push
+# configuration (§5.2) — none of which live in this file.
+#
+# Milestone 0 ships the structure. Milestone 1 adds the first migration and RLS policies.
+
+project_id = "kyascene"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+# Catches outbound mail locally so OTP flows can be tested without sending real email (§S03).
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# Profile photographs are the only P0 upload (§S13), and they are optional.
+file_size_limit = "5MiB"
+
+[auth]
+enabled = true
+site_url = "kyascene://"
+additional_redirect_urls = ["kyascene://", "https://kyascene.app"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+# §2.5 — the beta is for users aged 18 or older; sign-up is gated by invitation (§S04).
+enable_signup = true
+
+[auth.email]
+# §4.6: "Use email one-time codes for the first beta." No passwords, no social login.
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+
+[analytics]
+enabled = false

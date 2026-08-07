@@ -1,0 +1,16 @@
+{
+  "name": "@kyascene/analytics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vendor-neutral analytics adapter and the approved P0 event catalogue.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "echo \"no tests in @kyascene/analytics yet\" && exit 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@kyascene/config": "workspace:*",
+    "@types/node": "^22.19.0"
+  }
+}

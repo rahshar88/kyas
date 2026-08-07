@@ -1,0 +1,26 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    /* Spec §4.2: "TypeScript with strict mode enabled". The extra checks below match
+       packages/config/tsconfig.base.json; the mobile app cannot extend that file directly
+       because it must inherit Expo's JSX, module and lib settings. */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    /* Explicit because `expo/tsconfig.base` narrows `types`, and the hoisted pnpm layout
+       means @types/* are not auto-discovered from the app's own node_modules. */
+    "types": ["jest", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["node_modules", "ios", "android", ".expo"]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "kyascene",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KyaScene \u2014 the private community app for students from India studying in Australia. Powered by 1818.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "mobile:start": "pnpm --filter @kyascene/mobile start",
+    "mobile:config": "pnpm --filter @kyascene/mobile config:show",
+    "mobile:prebuild:check": "pnpm --filter @kyascene/mobile prebuild:check",
+    "mobile:export": "pnpm --filter @kyascene/mobile export:check",
+    "mobile:doctor": "pnpm --filter @kyascene/mobile doctor",
+    "verify:eas": "node scripts/verify-eas-config.mjs",
+    "assets:generate": "node scripts/generate-placeholder-assets.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "~6.0.3",
+    "globals": "^17.9.0",
+    "eslint-import-resolver-typescript": "^4.4.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
+      "react-native": "0.86.2"
+    },
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react-dom",
+        "react-native-web",
+        "@expo/metro-runtime",
+        "react-server-dom-webpack",
+        "react-native-webview",
+        "@expo/dom-webview"
+      ]
+    }
+  }
+}

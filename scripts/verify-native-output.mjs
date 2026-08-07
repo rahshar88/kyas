@@ -1,0 +1,184 @@
+#!/usr/bin/env node
+/**
+ * Asserts the NATIVE output of `expo prebuild` for a given environment.
+ *
+ * Checking `expo config` alone proves the JavaScript object is right; it does not prove the
+ * value survived into Info.plist, the Xcode project or AndroidManifest.xml. This checks the
+ * generated files, so a config-plugin regression or an Expo upgrade that quietly stops
+ * honouring a field fails CI instead of shipping.
+ *
+ * Usage: node scripts/verify-native-output.mjs <development|beta|production>
+ * Requires `expo prebuild` to have been run for BOTH platforms in that environment.
+ */
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const MOBILE = resolve(HERE, '..', 'apps', 'mobile');
+
+const environment = process.argv[2];
+const IDENTIFIERS = {
+  development: 'app.kyascene.beta',
+  beta: 'app.kyascene.beta',
+  production: 'app.kyascene',
+};
+
+if (!Object.hasOwn(IDENTIFIERS, environment)) {
+  console.error(`usage: verify-native-output.mjs <${Object.keys(IDENTIFIERS).join('|')}>`);
+  process.exit(2);
+}
+
+const bundleId = IDENTIFIERS[environment];
+const expectsUniversalLinks = environment !== 'development';
+
+/** §13.2 — no exact location, no contact book, no microphone in P0. */
+const FORBIDDEN_PERMISSIONS = [
+  'ACCESS_FINE_LOCATION',
+  'ACCESS_COARSE_LOCATION',
+  'ACCESS_BACKGROUND_LOCATION',
+  'READ_CONTACTS',
+  'WRITE_CONTACTS',
+  'RECORD_AUDIO',
+  'READ_SMS',
+];
+
+/**
+ * expo-dev-client puts SYSTEM_ALERT_WINDOW in the main manifest for its dev menu overlay.
+ * Development needs it; anything that reaches Play must not carry it, or it becomes a
+ * Data Safety disclosure (§19) for a capability the product does not use.
+ */
+const forbiddenPermissions =
+  environment === 'development'
+    ? FORBIDDEN_PERMISSIONS
+    : [...FORBIDDEN_PERMISSIONS, 'SYSTEM_ALERT_WINDOW'];
+
+const failures = [];
+const checks = [];
+
+function check(name, condition, detail = '') {
+  checks.push(name);
+  if (!condition) failures.push(`${name}${detail ? ` — ${detail}` : ''}`);
+}
+
+function read(path) {
+  return existsSync(path) ? readFileSync(path, 'utf8') : null;
+}
+
+function findFirst(dir, predicate) {
+  if (!existsSync(dir)) return null;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const found = findFirst(full, predicate);
+      if (found) return found;
+    } else if (predicate(entry.name, full)) {
+      return full;
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- iOS
+const iosDir = join(MOBILE, 'ios');
+check('ios/ was generated', existsSync(iosDir));
+
+if (existsSync(iosDir)) {
+  const pbxproj = findFirst(iosDir, (name) => name === 'project.pbxproj');
+  const pbx = pbxproj ? read(pbxproj) : null;
+  check('ios: project.pbxproj exists', pbx !== null);
+  // Xcode quotes identifiers containing dots, so accept both forms.
+  check(
+    `ios: bundle identifier is ${bundleId}`,
+    (pbx?.includes(`PRODUCT_BUNDLE_IDENTIFIER = ${bundleId};`) ||
+      pbx?.includes(`PRODUCT_BUNDLE_IDENTIFIER = "${bundleId}";`)) ??
+      false,
+  );
+
+  const plistPath = findFirst(
+    iosDir,
+    (name, full) => name === 'Info.plist' && !full.includes('Pods') && !full.includes('Tests'),
+  );
+  const plist = plistPath ? read(plistPath) : null;
+  check('ios: Info.plist exists', plist !== null);
+  check('ios: URL scheme is kyascene', plist?.includes('<string>kyascene</string>') ?? false);
+  check(
+    'ios: declares no non-exempt encryption',
+    plist?.includes('ITSAppUsesNonExemptEncryption') ?? false,
+  );
+  // §13.2 / §18: no permission strings until the feature that needs them exists (S13, M2).
+  check(
+    'ios: no unused camera/photo permission strings',
+    !(plist ?? '').includes('NSCameraUsageDescription') &&
+      !(plist ?? '').includes('NSPhotoLibraryUsageDescription'),
+    'a usage description was declared before any permission is requested',
+  );
+  check(
+    'ios: declares no location usage',
+    !(plist ?? '').includes('NSLocationWhenInUseUsageDescription') &&
+      !(plist ?? '').includes('NSLocationAlwaysAndWhenInUseUsageDescription'),
+  );
+
+  const entitlementsPath = findFirst(iosDir, (name) => name.endsWith('.entitlements'));
+  const entitlements = entitlementsPath ? read(entitlementsPath) : '';
+  const hasApplinks = (entitlements ?? '').includes('applinks:kyascene.app');
+  check(
+    expectsUniversalLinks
+      ? 'ios: universal links point at kyascene.app'
+      : 'ios: development declares no universal links',
+    hasApplinks === expectsUniversalLinks,
+  );
+}
+
+// ------------------------------------------------------------ Android
+const androidDir = join(MOBILE, 'android');
+check('android/ was generated', existsSync(androidDir));
+
+if (existsSync(androidDir)) {
+  const gradle = read(join(androidDir, 'app', 'build.gradle'));
+  check('android: app/build.gradle exists', gradle !== null);
+  check(
+    `android: applicationId is ${bundleId}`,
+    (gradle ?? '').includes(`applicationId '${bundleId}'`) ||
+      (gradle ?? '').includes(`applicationId "${bundleId}"`),
+  );
+
+  const manifest = read(join(androidDir, 'app', 'src', 'main', 'AndroidManifest.xml'));
+  check('android: AndroidManifest.xml exists', manifest !== null);
+
+  const manifestText = manifest ?? '';
+  const hasIntentFilter =
+    manifestText.includes('android:host="kyascene.app"') &&
+    manifestText.includes('android:autoVerify="true"');
+  check(
+    expectsUniversalLinks
+      ? 'android: app links verify kyascene.app'
+      : 'android: development declares no app links',
+    hasIntentFilter === expectsUniversalLinks,
+  );
+
+  /* The §13.2 gate. `blockedPermissions` does not delete the entry — it emits
+     `tools:node="remove"`, which the Gradle manifest merger applies at build time. So a
+     permission passes if it is absent OR carries that directive; it fails if some
+     transitive dependency has reintroduced it as a live request. */
+  for (const permission of forbiddenPermissions) {
+    const entry = new RegExp(
+      `<uses-permission[^>]*android:name="android\\.permission\\.${permission}"[^>]*/>`,
+    ).exec(manifestText);
+    check(
+      `android: does not request ${permission}`,
+      entry === null || entry[0].includes('tools:node="remove"'),
+      'spec §13.2 forbids this in P0 — a dependency has reintroduced it as a live request',
+    );
+  }
+}
+
+// ---------------------------------------------------------------- report
+if (failures.length > 0) {
+  console.error(`\n✖ native output verification failed for "${environment}"\n`);
+  for (const failure of failures) console.error(`  - ${failure}`);
+  console.error(`\n${checks.length - failures.length}/${checks.length} checks passed\n`);
+  process.exit(1);
+}
+
+console.log(`✔ native output verified for "${environment}" (${checks.length} checks)`);

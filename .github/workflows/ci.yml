@@ -1,0 +1,150 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, beta]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Placeholder values so config resolution, prebuild and bundling can run without secrets.
+  # Real beta and production values live in EAS environment variables (§5.3).
+  EXPO_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-publishable-key-value
+  EXPO_PUBLIC_SENTRY_DSN: https://ci@ci.ingest.sentry.io/0
+  EXPO_PUBLIC_ANALYTICS_KEY: ci-placeholder-analytics-key
+  EXPO_PUBLIC_SUPPORT_URL: https://kyascene.app/support
+  EXPO_PUBLIC_PRIVACY_URL: https://kyascene.app/privacy
+  EXPO_PUBLIC_TERMS_URL: https://kyascene.app/terms
+
+jobs:
+  # Spec §5.4: "Every pull request runs formatting, lint, type-checking, unit tests and
+  # iOS/Android configuration validation."
+  quality:
+    name: Format, lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format:check
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test
+        env:
+          EXPO_PUBLIC_ENVIRONMENT: development
+      - name: eas.json structure and secret scan
+        run: node scripts/verify-eas-config.mjs
+
+  # The §5.4 "iOS/Android configuration validation" gate, and the strongest available
+  # evidence for §20's "iOS and Android builds compile from the same commit" without a Mac.
+  config-validation:
+    name: Native config (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [development, beta, production]
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve app config
+        working-directory: apps/mobile
+        run: pnpm exec expo config --type public --json > "${RUNNER_TEMP}/config.json"
+
+      - name: Verify identifiers, links and permissions
+        run: node scripts/verify-app-config.mjs "${RUNNER_TEMP}/config.json" "${{ matrix.environment }}"
+
+      # Pure file templating plus one npm tarball — needs neither Xcode nor the Android SDK.
+      - name: Generate iOS project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform ios --no-install --clean
+
+      - name: Generate Android project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --no-install --clean
+
+      # Asserts the generated native files, not just the JS config object.
+      - name: Verify native output
+        run: node scripts/verify-native-output.mjs "${{ matrix.environment }}"
+
+      - name: Prebuild must not modify tracked files
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "::error::expo prebuild modified tracked files:"
+            git status --porcelain --untracked-files=no
+            git diff
+            exit 1
+          fi
+
+  # Runs Metro over the full graph for both platforms. Fails on any resolution error,
+  # bad import or missing asset — the class of bug a monorepo hoisting mistake causes.
+  bundle:
+    name: Bundle iOS and Android
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: beta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Export both platforms from one commit
+        working-directory: apps/mobile
+        run: pnpm exec expo export --platform ios --platform android --output-dir "${RUNNER_TEMP}/export"
+
+  # Spec §13.1: "Dependency and secret scanning in CI."
+  security:
+    name: Dependencies and secrets
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: development
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
+      # Fails loudly if anyone drifts off the Expo SDK 57 pinned versions.
+      - name: Expo SDK compatibility
+        working-directory: apps/mobile
+        run: pnpm exec expo-doctor
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
