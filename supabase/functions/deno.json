@@ -1,0 +1,17 @@
+{
+  "//": "Edge Functions run on Deno, not Node. ESLint ignores this directory because it cannot resolve jsr: specifiers; `deno check` is what validates it. Prettier still formats these files.",
+  "lock": false,
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "imports": {
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2"
+  },
+  "tasks": {
+    "check": "deno check redeem-invite/index.ts _shared/invite-code.ts _shared/response.ts"
+  }
+}

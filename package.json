@@ -24,7 +24,8 @@
     "assets:generate": "node scripts/generate-placeholder-assets.mjs",
     "mobile:ios": "pnpm --filter @kyascene/mobile ios",
     "mobile:android": "pnpm --filter @kyascene/mobile android",
-    "test:rls": "bash scripts/run-rls-tests.sh"
+    "test:rls": "bash scripts/run-rls-tests.sh",
+    "test:functions": "cd supabase/functions && deno task check"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

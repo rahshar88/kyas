@@ -19,6 +19,9 @@ export default [
       'apps/mobile/android/**',
       '**/*.tsbuildinfo',
       '**/expo-env.d.ts',
+      // Deno, not Node. ESLint cannot resolve `jsr:` or `npm:` specifiers, and the globals
+      // differ. `deno check` validates this directory instead — see supabase/functions/deno.json.
+      'supabase/functions/**',
     ],
   },
   ...expo,

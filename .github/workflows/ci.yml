@@ -146,6 +146,14 @@ jobs:
       - name: Apply migrations and assert row isolation
         run: bash scripts/run-rls-tests.sh
 
+      # Edge Functions are Deno, so they are outside the Node typecheck and ESLint run.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Functions
+        working-directory: supabase/functions
+        run: deno task check
+
   # Spec §13.1: "Dependency and secret scanning in CI."
   security:
     name: Dependencies and secrets

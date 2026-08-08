@@ -3,16 +3,16 @@
 Edge Functions for operations that need privileged checks, multi-table transactions or
 administrative authority (§12.1). Anything safe under RLS goes direct from the client instead.
 
-| Function | Milestone | Responsibility |
-| --- | --- | --- |
-| `redeem-invite` | ✅ M1 | Validate and atomically redeem an invitation (§S04) |
-| `submit-registration` | M2 | Validate a complete profile and move status to pending review |
-| `submit-feedback` | M3 | Create feedback and an optional screenshot reference |
-| `request-account-deletion` | M3 | Verify and initiate the deletion workflow |
-| `register-push-device` | M3 | Validate and store a platform push token |
-| `admin-review-registration` | M2 | Approve or reject with a reason and an audit event |
-| `admin-suspend-user` | M2 | Suspend access with a reason and an audit event |
-| `admin-send-announcement` | M3 | Send controlled beta communication |
+| Function                    | Milestone | Responsibility                                                |
+| --------------------------- | --------- | ------------------------------------------------------------- |
+| `redeem-invite`             | ✅ M1     | Validate and atomically redeem an invitation (§S04)           |
+| `submit-registration`       | M2        | Validate a complete profile and move status to pending review |
+| `submit-feedback`           | M3        | Create feedback and an optional screenshot reference          |
+| `request-account-deletion`  | M3        | Verify and initiate the deletion workflow                     |
+| `register-push-device`      | M3        | Validate and store a platform push token                      |
+| `admin-review-registration` | M2        | Approve or reject with a reason and an audit event            |
+| `admin-suspend-user`        | M2        | Suspend access with a reason and an audit event               |
+| `admin-send-announcement`   | M3        | Send controlled beta communication                            |
 
 ## Conventions
 
