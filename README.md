@@ -17,7 +17,8 @@ specification wins.
 
 ## Status: Milestone 0 complete
 
-Milestone 0 is the repository and vertical foundation (§17). What exists:
+**Running on a physical iPhone as of 8 August 2026.** Milestone 0 is the repository and
+vertical foundation (§17). What exists:
 
 - pnpm monorepo, Expo SDK 57 app, TypeScript strict across every package
 - Expo Router shell — S00 launch and S01 welcome only
@@ -121,19 +122,33 @@ What was run and passed on this Linux environment:
 | `expo-doctor`                                           | **20/20**                               |
 | `verify-eas-config.mjs`                                 | 22 checks                               |
 
-### What could not be verified here, and needs a Mac
+### Milestone 0 exit criterion
 
-This environment has no macOS, no Xcode, no Android SDK, no signing certificates and no
-store or Supabase accounts. So Milestone 0's exit criterion splits in two:
+> _"The signed development app opens on iOS and Android; CI is green."_
 
-- ✅ **"CI is green"** — substantially proven above.
-- ⬜ **"The signed development app opens on iOS and Android"** — _not verified._ Needs
-  `pod install`, an Xcode build, a Gradle build, a simulator/emulator and EAS credentials.
+- ✅ **CI is green** — proven by the table above.
+- ✅ **The signed development app opens on iOS** — confirmed on a physical iPhone
+  (iOS 26.6) on 8 August 2026. `expo run:ios --device` built and signed with an Apple
+  Development certificate, installed, and the app launched to Welcome. The device log showed
+  the expected §14.2 sequence with no personal data attached:
 
-Also unverified: that `app.kyascene` and `app.kyascene.beta` are actually available in Apple
-Developer and Play Console (§4.5 requires confirming this before the first signed build);
-any real Supabase, Sentry or analytics connection; universal links (they need files hosted
-at `kyascene.app`); and Maestro execution.
+  ```
+  [analytics] app_opened {}
+  [analytics] session_restore_succeeded {"screen": "S00"}
+  [analytics] welcome_viewed {"screen": "S01"}
+  [analytics] auth_started {"screen": "S01"}
+  ```
+
+  Signing also **confirmed `app.kyascene.beta` is available** and registered it to the team,
+  which closes §4.5's requirement to check identifier availability before the first signed
+  build. `app.kyascene` (production) is still unclaimed and should be checked before Milestone 4.
+
+- ⬜ **Android** — still open. Needs the Android SDK and an emulator or handset; Android is
+  Milestone 5. The Android project generates and bundles from the same commit in CI, which is
+  the strongest evidence available short of running it.
+
+Still unverified: any real Supabase, Sentry or analytics connection; universal links, which
+need files hosted at `kyascene.app`; and Maestro execution.
 
 ## Documentation
 

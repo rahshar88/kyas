@@ -7,6 +7,9 @@ opens on iOS and Android."_
 **You do not need an Apple Developer account, a Google Play account or a Supabase project to
 do Stages 1–4.** The simulator needs none of them, and Milestone 0 has no backend code yet.
 
+This runbook has been followed end to end on a clean MacBook Air (no Homebrew, no Node) and
+the app reached a physical iPhone running iOS 26.6.
+
 ---
 
 ## Stage 1 — Install the tools (about 45 minutes, mostly Xcode downloading)
@@ -109,15 +112,15 @@ If it fails, see Troubleshooting below.
 
 ### What to check once it opens
 
-|                 | Expected                                                                                                                              |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Launch          | KyaScene wordmark on dark green, brief spinner, then Welcome                                                                          |
-| Welcome         | "Connect / Discover / Belong", "The beta is free and invite-only", Privacy and Terms links, "Powered by 1818"                         |
-| "Join the beta" | Does nothing. Correct — registration is Milestone 1                                                                                   |
-| Privacy / Terms | Open `kyascene.app/privacy` and `/terms` in Safari. Those pages do not exist yet, so expect a 404 — the wiring is what's being tested |
-| Dark / light    | Simulator → Settings → Developer → Dark Appearance. The whole screen should re-colour                                                 |
-| Large text      | Settings → Accessibility → Display & Text Size → Larger Text. Nothing should clip or overlap                                          |
-| VoiceOver       | Settings → Accessibility → VoiceOver. Every button should announce a sensible name                                                    |
+|                 | Expected                                                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launch          | KyaScene wordmark on dark green, brief spinner, then Welcome                                                                                    |
+| Welcome         | "Connect / Discover / Belong", "The beta is free and invite-only", Privacy and Terms links, "Powered by 1818"                                   |
+| "Join the beta" | Does nothing. Correct — registration is Milestone 1. The tap IS registered: the terminal logs `[analytics] auth_started`                        |
+| Privacy / Terms | Open `kyascene.app/privacy` and `/terms` in Safari. Those pages do not exist yet, so expect a 404 — the wiring is what's being tested           |
+| Dark / light    | On a phone: Settings → Display & Brightness → Appearance. On the simulator: Settings → Developer → Dark Appearance. The whole screen re-colours |
+| Large text      | Settings → Accessibility → Display & Text Size → Larger Text. Nothing should clip or overlap                                                    |
+| VoiceOver       | Settings → Accessibility → VoiceOver. Every button should announce a sensible name                                                              |
 
 The launch screen's "couldn't start" state is hard to trigger by hand — it needs the session
 check to hang for four seconds, which cannot happen yet because the check is a stub. It is
@@ -128,35 +131,53 @@ covered by the screenshots in the Milestone 0 review instead.
 ```bash
 pnpm run typecheck
 pnpm run lint
-pnpm run test          # expect 100+ passing
-pnpm run mobile:doctor # expect 20/20
+pnpm run test
+pnpm run mobile:doctor
 ```
 
-These all passed on Linux. Running them on your machine confirms there is nothing
+Expect 108 tests passing and expo-doctor 20/20. These all passed on Linux. Running them on your machine confirms there is nothing
 environment-specific hiding.
 
-## Stage 6 — A real iPhone (optional, still no paid account needed)
+## Stage 6 — A real iPhone
 
-1. Plug the phone in, unlock it, tap **Trust**.
-2. `open apps/mobile/ios/KyaSceneBeta.xcworkspace`
-   — always the `.xcworkspace`, never the `.xcodeproj`, or CocoaPods dependencies are missing.
-   The name comes from the app name, so in a development or beta build it is `KyaSceneBeta`;
-   a production build produces `KyaScene`. The workspace only exists after `pod install` has
-   run, which Stage 4 does for you.
-3. In Xcode: select the **KyaSceneBeta** target → **Signing & Capabilities** → tick
-   _Automatically manage signing_ → under Team choose **Add an Account** and sign in with your
-   ordinary Apple ID. A free "Personal Team" appears.
-4. Change the Bundle Identifier to something unique to you, e.g. `app.kyascene.beta.yourname`
-   — free accounts cannot claim an identifier someone else may register.
-5. Pick your phone from the device list and press ▶.
-6. On the phone: Settings → General → VPN & Device Management → trust your developer
-   certificate.
+You can go straight to a handset and skip the simulator entirely — Stage 4 is not a
+prerequisite.
 
-A free account's build stops working after 7 days. That is expected; the paid account at
-Milestone 4 removes the limit.
+Plug the phone in, unlock it, tap **Trust** if asked, then:
 
-**Do not commit the bundle identifier change.** `ios/` is gitignored, so as long as you edit
-it in Xcode rather than in `app.config.ts`, nothing will be.
+```bash
+cd apps/mobile
+npx expo run:ios --device
+```
+
+It lists connected devices, you pick yours, and it handles signing itself. If you already
+have an Apple Development certificate on the Mac it will use it without prompting. This is
+the path that was actually used to verify Milestone 0.
+
+On the phone afterwards, if iOS refuses to open the app: Settings → General → VPN & Device
+Management → trust your developer certificate.
+
+**This build is tethered to your Mac.** The JavaScript is served by Metro in that terminal
+window, so the app stops working when you close it or leave the network. That is a
+development build, not a distributable one — an untethered build is `eas build`, at
+Milestone 4.
+
+### If you only have a free Apple ID
+
+`expo run:ios --device` still works, but a free Personal Team cannot claim a bundle
+identifier that another developer may have registered, and its builds expire after 7 days.
+If signing fails, open the project in Xcode and give yourself a private identifier:
+
+1. `open apps/mobile/ios/KyaSceneBeta.xcworkspace` — always the `.xcworkspace`, never the
+   `.xcodeproj`, or the CocoaPods dependencies are missing. The name follows the app name, so
+   development and beta produce `KyaSceneBeta` and production produces `KyaScene`.
+2. Select the **KyaSceneBeta** target → **Signing & Capabilities** → tick _Automatically
+   manage signing_ → Team → **Add an Account**, and sign in.
+3. Change the Bundle Identifier to something unique to you, e.g.
+   `app.kyascene.beta.yourname`.
+4. Pick your phone and press ▶.
+
+`ios/` is gitignored, so that change stays local — do not make it in `app.config.ts`.
 
 ## Stage 7 — Android (optional, and can wait)
 
