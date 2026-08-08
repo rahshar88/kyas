@@ -6,6 +6,8 @@ const shared = {
   // `setupFiles`, not `setupFilesAfterEnv`: env vars must exist before any module under
   // test imports src/config/env.ts, which validates at import time.
   setupFiles: ['<rootDir>/jest.setup.ts'],
+  // Native module mocks need the test framework, so they run after the environment is up.
+  setupFilesAfterEnv: ['<rootDir>/jest.mocks.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
