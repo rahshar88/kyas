@@ -17,10 +17,15 @@ export interface TextFieldProps {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
-  /** Shown beneath the label. Use for the "why we need this" note §S02 asks for. */
-  hint?: string;
+  /**
+   * Shown beneath the label. Use for the "why we need this" note §S02 asks for.
+   *
+   * Explicitly `| undefined` because the workspace enables `exactOptionalPropertyTypes`, and
+   * callers legitimately compute this conditionally.
+   */
+  hint?: string | undefined;
   error?: string | undefined;
-  placeholder?: string;
+  placeholder?: string | undefined;
   keyboardType?: KeyboardTypeOptions;
   autoCapitalize?: TextInputProps['autoCapitalize'];
   autoComplete?: TextInputProps['autoComplete'];

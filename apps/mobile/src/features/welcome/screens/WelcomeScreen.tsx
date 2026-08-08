@@ -10,6 +10,7 @@ import {
   useTheme,
 } from '@kyascene/ui';
 import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -30,12 +31,12 @@ const PILLARS = [
  * supported phone sizes." The layout therefore keeps the primary action in a fixed footer
  * block rather than at the end of a scrolling column.
  *
- * "Join the beta" is intentionally inert in Milestone 0 — §21.2 forbids registration
- * business logic here, and §3.3 forbids anything incomplete from *looking* functional, so
- * it announces that the beta is invite-only rather than pretending to start a flow.
+ * Both actions lead to the same place. §S02 creates or recovers an account from one screen,
+ * because telling the two apart would reveal whether an address is already registered.
  */
 export function WelcomeScreen() {
   const theme = useTheme();
+  const router = useRouter();
 
   useEffect(() => {
     analytics.track('welcome_viewed', { screen: 'S01' });
@@ -71,9 +72,9 @@ export function WelcomeScreen() {
         <PrimaryButton
           label="Join the beta"
           testID="welcome-join"
-          accessibilityHint="Registration opens in a later beta release"
           onPress={() => {
             analytics.track('auth_started', { screen: 'S01' });
+            router.push('/(public)/sign-in');
           }}
         />
         <SecondaryButton
@@ -81,6 +82,7 @@ export function WelcomeScreen() {
           testID="welcome-sign-in"
           onPress={() => {
             analytics.track('auth_started', { screen: 'S01', outcomeCode: 'RETURNING' });
+            router.push('/(public)/sign-in');
           }}
         />
 

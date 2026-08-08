@@ -17,8 +17,8 @@ export interface SelectFieldProps {
   value: string | undefined;
   options: SelectOption[];
   onChange: (code: string) => void;
-  placeholder?: string;
-  hint?: string;
+  placeholder?: string | undefined;
+  hint?: string | undefined;
   error?: string | undefined;
   /** §S06 needs a searchable provider list; §S08's 36 states are fine without one. */
   searchable?: boolean;

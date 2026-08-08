@@ -8,8 +8,8 @@ import { TextButton } from './TextButton';
 export interface AppHeaderProps {
   title: string;
   /** Sits above the title. Used for the step counter on registration screens. */
-  eyebrow?: string;
-  subtitle?: string;
+  eyebrow?: string | undefined;
+  subtitle?: string | undefined;
   onBack?: () => void;
   testID?: string;
 }
