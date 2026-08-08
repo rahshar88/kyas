@@ -45,16 +45,23 @@ RLS, the other 21 P0 screens, or the admin console. See
 ```bash
 pnpm install
 cp apps/mobile/.env.example apps/mobile/.env    # then fill in the Supabase values
-pnpm --filter @kyascene/mobile start
+pnpm run mobile:ios                             # builds and launches the iOS simulator
 ```
 
-The app **will refuse to build** until `.env` is complete. That is deliberate — see
+Milestone 0 has no backend calls yet, so placeholder Supabase values are fine — the
+publishable key just needs to be 20 characters or more. The app **will refuse to build** if a
+variable is missing entirely; that is deliberate, see
 [ADR-0003](docs/decisions/0003-environment-validation.md).
+
+**Setting up a Mac from scratch?** Follow
+[docs/runbooks/first-run-on-mac.md](docs/runbooks/first-run-on-mac.md) — it covers Xcode,
+CocoaPods, running on a real iPhone with a free Apple ID, and what to check once it opens.
 
 ## Commands
 
 | Command                                   | What it does                                     |
 | ----------------------------------------- | ------------------------------------------------ |
+| `pnpm run mobile:ios` · `mobile:android`  | build and launch on a simulator or emulator      |
 | `pnpm run typecheck`                      | strict TypeScript across every package           |
 | `pnpm run lint` · `pnpm run format:check` | the §5.4 style gates                             |
 | `pnpm run test`                           | Jest, both iOS and Android projects              |
@@ -132,6 +139,7 @@ at `kyascene.app`); and Maestro execution.
 
 |                                                              |                                                     |
 | ------------------------------------------------------------ | --------------------------------------------------- |
+| [First run on a Mac](docs/runbooks/first-run-on-mac.md)      | Xcode, simulator, real iPhone, troubleshooting      |
 | [Master specification](docs/product/master-specification.md) | the source of truth                                 |
 | [Scope boundaries](docs/product/scope-boundaries.md)         | P0 non-goals, drift guardrail                       |
 | [Architecture overview](docs/architecture/overview.md)       | layering, feature modules, packages                 |

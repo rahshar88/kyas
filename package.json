@@ -21,7 +21,9 @@
     "mobile:export": "pnpm --filter @kyascene/mobile export:check",
     "mobile:doctor": "pnpm --filter @kyascene/mobile doctor",
     "verify:eas": "node scripts/verify-eas-config.mjs",
-    "assets:generate": "node scripts/generate-placeholder-assets.mjs"
+    "assets:generate": "node scripts/generate-placeholder-assets.mjs",
+    "mobile:ios": "pnpm --filter @kyascene/mobile ios",
+    "mobile:android": "pnpm --filter @kyascene/mobile android"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

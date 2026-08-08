@@ -59,12 +59,32 @@ class EnvValidationError extends Error {
 }
 
 /**
+ * Treats a blank value as absent.
+ *
+ * `.env` files express "not set" as `KEY=`, which dotenv reads as an empty string — and an
+ * empty string is not `undefined`, so `.optional()` would not apply and `z.url()` would
+ * reject it. Without this, copying `.env.example` verbatim fails on the optional Sentry and
+ * analytics keys, which is precisely the first thing anyone does with a fresh clone.
+ *
+ * Trimming as well, because a stray trailing space in a `.env` is invisible and would
+ * otherwise produce a baffling "Invalid URL".
+ */
+function normalise(input) {
+  const out = {};
+  for (const [key, value] of Object.entries(input)) {
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+    out[key] = trimmed === '' ? undefined : trimmed;
+  }
+  return out;
+}
+
+/**
  * Validates the environment and fails loudly. Called at config time so a misconfigured
  * build breaks `expo config`, `expo prebuild`, `expo export` and every EAS build — rather
  * than showing a tester a white screen.
  */
 function parseEnv(input) {
-  const result = envSchema.safeParse(input);
+  const result = envSchema.safeParse(normalise(input));
 
   if (!result.success) {
     const details = result.error.issues

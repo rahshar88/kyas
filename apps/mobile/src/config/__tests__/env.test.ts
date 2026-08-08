@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { EnvValidationError, PUBLIC_ENV_KEYS, parseEnv } from '../env';
 
 const VALID = {
@@ -45,6 +48,56 @@ describe('environment validation (spec §5.3)', () => {
     expect(message).toContain('EXPO_PUBLIC_SUPABASE_URL');
     expect(message).toContain('EXPO_PUBLIC_PRIVACY_URL');
     expect(message).toContain('EXPO_PUBLIC_TERMS_URL');
+  });
+
+  /**
+   * A `.env` file spells "not set" as `KEY=`, which dotenv reads as an empty string rather
+   * than undefined. Copying `.env.example` verbatim is the first thing anyone does with a
+   * fresh clone, so it must work.
+   */
+  describe('blank values are treated as absent', () => {
+    it('accepts empty optional keys, the way a .env file writes them', () => {
+      expect(() =>
+        parseEnv({ ...VALID, EXPO_PUBLIC_SENTRY_DSN: '', EXPO_PUBLIC_ANALYTICS_KEY: '' }),
+      ).not.toThrow();
+    });
+
+    it('trims stray whitespace rather than failing on an invisible space', () => {
+      const parsed = parseEnv({ ...VALID, EXPO_PUBLIC_SUPABASE_URL: '  https://x.supabase.co  ' });
+      expect(parsed.EXPO_PUBLIC_SUPABASE_URL).toBe('https://x.supabase.co');
+    });
+
+    it('still rejects a blank REQUIRED value', () => {
+      expect(() => parseEnv({ ...VALID, EXPO_PUBLIC_SUPABASE_URL: '   ' })).toThrow(
+        /EXPO_PUBLIC_SUPABASE_URL/,
+      );
+    });
+
+    /**
+     * The README tells a new developer to copy this file and fill in the Supabase values.
+     * This asserts that doing exactly that produces a working development environment, so
+     * the onboarding instruction cannot drift away from the schema.
+     */
+    it('validates the shipped .env.example once Supabase values are filled in', () => {
+      const raw = readFileSync(join(__dirname, '..', '..', '..', '.env.example'), 'utf8');
+
+      const parsed: Record<string, string> = {};
+      for (const line of raw.split('\n')) {
+        const match = /^([A-Z0-9_]+)=(.*)$/.exec(line.trim());
+        if (match?.[1] !== undefined) parsed[match[1]] = match[2] ?? '';
+      }
+
+      expect(Object.keys(parsed).sort()).toEqual([...PUBLIC_ENV_KEYS].sort());
+
+      expect(() =>
+        parseEnv({
+          ...parsed,
+          // The only two placeholders the README asks a developer to replace.
+          EXPO_PUBLIC_SUPABASE_URL: 'https://real-project-ref.supabase.co',
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'a-real-publishable-anon-key-value',
+        }),
+      ).not.toThrow();
+    });
   });
 
   describe('crash reporting and analytics (§20)', () => {

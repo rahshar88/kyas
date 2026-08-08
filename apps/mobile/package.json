@@ -3,18 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
-  "description": "KyaScene mobile app — Expo SDK 57 / React Native. iOS first, Android second.",
+  "description": "KyaScene mobile app \u2014 Expo SDK 57 / React Native. iOS first, Android second.",
   "scripts": {
     "start": "expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
     "test": "jest",
     "test:watch": "jest --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "config:show": "expo config --type public",
     "prebuild:check": "expo prebuild --platform ios --no-install --clean && expo prebuild --platform android --no-install --clean",
     "export:check": "expo export --platform ios --platform android --output-dir .expo/export-check",
-    "doctor": "expo-doctor",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "doctor": "expo-doctor"
   },
   "dependencies": {
     "@kyascene/analytics": "workspace:*",
