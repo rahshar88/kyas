@@ -24,7 +24,7 @@ Milestone 0 is the repository and vertical foundation (§17). What exists:
 - Design tokens (§7.1, §7.3) with a WCAG AA contrast test as a CI gate
 - Environment validation that fails the build, not the tester's phone
 - `eas.json` profiles, Supabase folder structure, CI compiling both platforms
-- 100 tests passing across the iOS and Android Jest projects
+- 108 tests passing across the iOS and Android Jest projects
 
 **Not** implemented: authentication, invites, eligibility, registration, Supabase tables or
 RLS, the other 21 P0 screens, or the admin console. See
@@ -44,13 +44,13 @@ RLS, the other 21 P0 screens, or the admin console. See
 
 ```bash
 pnpm install
-cp apps/mobile/.env.example apps/mobile/.env    # then fill in the Supabase values
-pnpm run mobile:ios                             # builds and launches the iOS simulator
+cp apps/mobile/.env.example apps/mobile/.env
+pnpm run mobile:ios
 ```
 
-Milestone 0 has no backend calls yet, so placeholder Supabase values are fine — the
-publishable key just needs to be 20 characters or more. The app **will refuse to build** if a
-variable is missing entirely; that is deliberate, see
+Open the copied `.env` and set `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to any text of 20
+characters or more; leave the rest as-is. Milestone 0 makes no backend calls, so placeholders
+are fine. A variable that is missing entirely **will fail the build** — deliberately, see
 [ADR-0003](docs/decisions/0003-environment-validation.md).
 
 **Setting up a Mac from scratch?** Follow
@@ -114,7 +114,7 @@ What was run and passed on this Linux environment:
 | `pnpm install --frozen-lockfile`                        | clean                                   |
 | `pnpm run typecheck`                                    | clean, strict, all 6 projects           |
 | `pnpm run lint` · `format:check`                        | clean                                   |
-| `pnpm run test`                                         | **100 passed** (iOS + Android projects) |
+| `pnpm run test`                                         | **108 passed** (iOS + Android projects) |
 | `expo config` for all 3 environments                    | 20 assertions each                      |
 | `expo prebuild` iOS **and** Android, all 3 environments | 21–22 native assertions each            |
 | `expo export --platform ios --platform android`         | both bundles built from one commit      |

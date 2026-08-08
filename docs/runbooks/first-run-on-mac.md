@@ -11,30 +11,56 @@ do Stages 1–4.** The simulator needs none of them, and Milestone 0 has no back
 
 ## Stage 1 — Install the tools (about 45 minutes, mostly Xcode downloading)
 
+> **Run each block on its own.** Every code block in this runbook is safe to paste as a
+> whole, and none of them contain `#` comments — macOS zsh does not treat `#` as a comment
+> unless `setopt interactive_comments` has been set, so a pasted comment line becomes
+> `zsh: command not found: #`.
+
+**1. Xcode.** Install Xcode 16 or newer from the Mac App Store and open it once to accept the
+licence. Then install the command line tools — no `sudo`, it opens a GUI installer:
+
 ```bash
-# 1. Xcode from the Mac App Store (16 or newer), then open it once to accept the licence.
-sudo xcode-select --install
+xcode-select --install
+```
+
+Point the toolchain at the full Xcode rather than the standalone tools:
+
+```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
 
-# 2. An iOS simulator runtime: Xcode → Settings → Components → download an iOS 18 runtime.
+**2. A simulator runtime.** Xcode → Settings → Components → download an iOS 18 runtime.
 
-# 3. Homebrew, if you don't have it: https://brew.sh
+**3. Node, Watchman and CocoaPods.** Install [Homebrew](https://brew.sh) first if you do not
+have it, then:
+
+```bash
 brew install node@22 watchman cocoapods
+```
 
-# 4. pnpm, via Node's built-in corepack
+**4. Put Node 22 on your PATH.** Homebrew keeps `node@22` keg-only, so this step is required
+or `node` will not be found at all. On an Intel Mac replace `/opt/homebrew` with
+`/usr/local`:
+
+```bash
+echo 'export PATH="/opt/homebrew/opt/node@22/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 corepack enable
 ```
 
-Check the versions match what the repo expects:
+**5. Check the versions:**
 
 ```bash
-node --version    # v22.13 or newer
-pnpm --version    # 10.x
-pod --version     # 1.15 or newer
+node --version
+pnpm --version
+pod --version
 xcodebuild -version
 ```
 
-If you use `nvm`, `nvm use` in the repo root picks up the pinned version from `.nvmrc`.
+Expect Node v22.13 or newer, pnpm 10.x, CocoaPods 1.15 or newer, and Xcode 16 or newer.
+
+If you use `nvm` instead of Homebrew for Node, `nvm use` in the repo root picks up the pinned
+version from `.nvmrc` and you can skip step 4.
 
 ## Stage 2 — Get the code
 
@@ -49,12 +75,20 @@ pnpm install
 
 ```bash
 cp apps/mobile/.env.example apps/mobile/.env
+open -e apps/mobile/.env
 ```
 
-**You can leave every value as-is for now**, except the Supabase publishable key, which needs
-to be at least 20 characters — put any placeholder text in it. Nothing connects to Supabase
-in Milestone 0; the Supabase client is not even installed yet. The variables exist so that
-Milestone 1 has somewhere to put real credentials.
+**You can leave every value as-is for now**, except the Supabase publishable key. Change:
+
+```
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=replace-with-publishable-anon-key
+```
+
+to any text of 20 characters or more, for example
+`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=placeholder-key-until-milestone-1`. Save and close.
+
+Nothing connects to Supabase in Milestone 0 — the Supabase client is not even installed yet.
+The variables exist so Milestone 1 has somewhere to put real credentials.
 
 The Sentry and analytics lines can stay blank. They are only required for beta and production
 builds (§20).
@@ -130,8 +164,12 @@ Android is Milestone 5. If you want to see it now:
 
 ```bash
 brew install --cask android-studio
-# Android Studio → More Actions → SDK Manager → install SDK 35 + build tools
-# → Device Manager → create a Pixel emulator, start it
+```
+
+Then in Android Studio: **More Actions → SDK Manager** → install SDK 35 and the build tools;
+**More Actions → Device Manager** → create a Pixel emulator and start it. Then:
+
+```bash
 pnpm run mobile:android
 ```
 
