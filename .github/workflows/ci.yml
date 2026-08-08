@@ -117,6 +117,35 @@ jobs:
         working-directory: apps/mobile
         run: pnpm exec expo export --platform ios --platform android --output-dir "${RUNNER_TEMP}/export"
 
+  # Spec §20: "Row Level Security tests prove that one user cannot read another user's
+  # private records." Runs against plain PostgreSQL — the policies are ordinary Postgres RLS,
+  # and supabase/tests/00-local-shim.sql recreates the only Supabase-specific pieces
+  # (auth.uid() and the three roles).
+  database:
+    name: Migrations and RLS
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations and assert row isolation
+        run: bash scripts/run-rls-tests.sh
+
   # Spec §13.1: "Dependency and secret scanning in CI."
   security:
     name: Dependencies and secrets

@@ -23,7 +23,8 @@
     "verify:eas": "node scripts/verify-eas-config.mjs",
     "assets:generate": "node scripts/generate-placeholder-assets.mjs",
     "mobile:ios": "pnpm --filter @kyascene/mobile ios",
-    "mobile:android": "pnpm --filter @kyascene/mobile android"
+    "mobile:android": "pnpm --filter @kyascene/mobile android",
+    "test:rls": "bash scripts/run-rls-tests.sh"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
