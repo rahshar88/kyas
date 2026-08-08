@@ -31,11 +31,15 @@ export class ConsoleAnalyticsAdapter implements AnalyticsAdapter {
 
   track(event: AnalyticsEvent, properties?: AnalyticsProperties): void {
     this.recorded.push({ event, properties });
-    console.warn(`[analytics] ${event}`, { ...properties, ...this.context });
+    // Informational dev output. Deliberately `log`, not `warn`: §14 events are frequent, and
+    // colouring every one as a warning drowns out the real ones in the Metro console.
+    // eslint-disable-next-line no-console
+    console.log(`[analytics] ${event}`, { ...properties, ...this.context });
   }
 
   identify(anonymousId: string): void {
-    console.warn(`[analytics] identify ${anonymousId}`);
+    // eslint-disable-next-line no-console
+    console.log(`[analytics] identify ${anonymousId}`);
   }
 
   reset(): void {

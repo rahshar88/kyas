@@ -50,6 +50,12 @@
         "react-native-webview",
         "@expo/dom-webview"
       ]
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-w3rx-r6r6-pgpr",
+        "GHSA-5p2g-fcmc-qvqq"
+      ]
     }
   }
 }

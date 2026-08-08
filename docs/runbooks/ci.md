@@ -28,6 +28,27 @@ Note on Android permissions: `blockedPermissions` does not delete the entry, it 
 banned if it is absent **or** carries that directive, and fails if a dependency has
 reintroduced it as a live request.
 
+## The dependency audit allow-list
+
+`pnpm audit --audit-level=high` blocks the `security` job. Two advisories are exempted in
+`package.json` under `pnpm.auditConfig.ignoreGhsas`, because JSON cannot carry the reasoning:
+
+| Advisory              | Package      | Why exempt                     |
+| --------------------- | ------------ | ------------------------------ |
+| `GHSA-w3rx-r6r6-pgpr` | `image-size` | ICNS parser infinite loop      |
+| `GHSA-5p2g-fcmc-qvqq` | `image-size` | JXL/HEIF parser infinite loops |
+
+Both reach us only through `expo → @expo/metro → metro`, and **both report
+`patched: <0.0.0`, meaning no fixed version exists**. Metro is the build-time bundler: it
+parses images on a developer's machine or a CI runner, never on a tester's phone, and the
+images it parses are the ones committed to this repository. Triggering either bug would
+require committing a malicious image to our own assets.
+
+The gate stays _blocking_ rather than being downgraded to `--audit-level=critical`, so any
+**new** high-severity advisory still fails CI. Re-check this list whenever the Expo SDK is
+upgraded (§25 requires revalidating references before a major upgrade anyway); if `metro`
+moves to a patched `image-size`, delete the entries.
+
 ## Branch protection
 
 §5.4 requires a pull request to merge to `main`. Configure these as required checks (a

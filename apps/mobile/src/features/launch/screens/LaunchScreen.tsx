@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { analytics } from '@/services/analytics';
-import { WELCOME_ROUTE, resolveRouteGroup } from '@/navigation/route-groups';
+import { WELCOME_ROUTE } from '@/navigation/route-groups';
 
 import { SESSION_RESTORE_TIMEOUT_MS, restoreSession } from '../services/session';
 
@@ -67,9 +67,11 @@ export function LaunchScreen() {
           return;
         }
 
-        // Milestone 1 replaces this with a push into the resolved group's entry route.
-        // Until those groups have screens, an existing session still starts at welcome.
-        resolveRouteGroup(session.status);
+        // §8.2 says where this account belongs, and route-groups.ts already computes it —
+        // but `(registration)` and `(approved)` have no screens until Milestones 1–3, so
+        // routing there now would land on a group with no leaf route. Milestone 1 replaces
+        // this line with a push into the resolved group.
+        void session;
         router.replace(WELCOME_ROUTE);
       })
       .catch(() => {

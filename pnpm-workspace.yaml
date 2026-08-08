@@ -5,3 +5,5 @@ packages:
 # pnpm 10 blocks postinstall scripts by default. Only trusted build tooling is allowed.
 onlyBuiltDependencies:
   - esbuild
+  # native resolver used by eslint-import-resolver-typescript
+  - unrs-resolver
