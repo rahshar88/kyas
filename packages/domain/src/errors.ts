@@ -58,6 +58,10 @@ export const APP_ERROR_MESSAGES: Record<AppErrorCode, string> = {
   INVITE_EXHAUSTED: 'This invitation has already been fully used.',
   REGISTRATION_ALREADY_SUBMITTED: 'Your registration is already with our team for review.',
   ACCOUNT_SUSPENDED: 'This account is on hold. Contact support and we will help.',
-  RATE_LIMITED: 'That was a few too many tries. Wait a moment and try again.',
+  // "A moment" was wrong and cost real debugging time: an email-code rate limit is measured
+  // in tens of minutes, not seconds, so a tester who waits thirty seconds and retries simply
+  // deepens the limit and concludes the app is broken. §7.6 asks for calm and specific — the
+  // honest version says the wait is long without inventing a number the server never sent.
+  RATE_LIMITED: 'Too many attempts. This one needs a longer wait — try again later.',
   UNKNOWN: 'Something went wrong on our side. Nothing you entered has been lost.',
 };

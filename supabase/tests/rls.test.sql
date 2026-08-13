@@ -270,6 +270,17 @@ begin
     coalesce('tables without RLS enabled: ' || offending, 'every public table has RLS enabled')
   );
 
+  /**
+   * Every table must FORCE row security — applying policies to the table owner too — except
+   * the reference catalogues, which cannot: FORCE would subject the owner to RLS, and the
+   * catalogues have no insert policy, so seeding them would fail.
+   *
+   * The exemption is derived rather than listed by name. A catalogue is a table nothing is
+   * keyed to a user by, so it holds no personal data and has nothing to isolate. Deriving it
+   * means a table added later is covered without anyone remembering to update this test —
+   * the previous version named two tables explicitly and silently gave the four Milestone 2
+   * catalogues a pass they had not earned.
+   */
   select string_agg(c.relname, ', ')
     into offending
     from pg_class c
@@ -278,12 +289,42 @@ begin
      and c.relkind = 'r'
      and c.relrowsecurity
      and not c.relforcerowsecurity
-     and c.relname <> 'india_states'
-     and c.relname <> 'education_providers';
+     and exists (
+       select 1 from information_schema.columns col
+        where col.table_schema = 'public'
+          and col.table_name = c.relname
+          and col.column_name in ('user_id', 'actor_id', 'owner_id')
+     );
 
   perform pg_temp.assert(
     offending is null,
     coalesce('user tables not FORCEing RLS: ' || offending, 'user tables force RLS for their owner too')
+  );
+
+  -- The other half of that exemption: a catalogue is only safe to leave unforced while it
+  -- stays read-only to clients. A write policy on one would make the exemption a hole.
+  select string_agg(distinct c.relname, ', ')
+    into offending
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_policy p on p.polrelid = c.oid
+   where n.nspname = 'public'
+     and c.relkind = 'r'
+     and not c.relforcerowsecurity
+     and p.polcmd <> 'r'   -- anything other than SELECT
+     and not exists (
+       select 1 from information_schema.columns col
+        where col.table_schema = 'public'
+          and col.table_name = c.relname
+          and col.column_name in ('user_id', 'actor_id', 'owner_id')
+     );
+
+  perform pg_temp.assert(
+    offending is null,
+    coalesce(
+      'reference catalogues with a write policy: ' || offending,
+      'reference catalogues are read-only to clients'
+    )
   );
 end
 $$;

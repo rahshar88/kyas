@@ -145,10 +145,43 @@ the server.
 
 ## Troubleshooting
 
-**No email arrives.** Supabase's built-in email service is heavily rate-limited on the free
-tier — a few messages per hour. For real testing, configure a custom SMTP provider under
-**Authentication → Email Templates → SMTP Settings**. This becomes mandatory before beta
-(§20 expects the funnel to work), and the sender domain should be `kyascene.app`.
+**No email arrives, or the email has no 6-digit code.** There are two separate causes and they
+look identical from the phone. Check both.
+
+_Cause 1 — the built-in mailer is rate-limited._ Supabase's default email service allows
+roughly **two messages per hour** on a free project. Retrying makes it worse, not better. You
+can confirm it without guessing:
+
+```bash
+curl -s -X POST "https://YOUR-REF.supabase.co/auth/v1/otp" -H "apikey: YOUR-PUBLISHABLE-KEY" -H "Content-Type: application/json" -d '{"email":"you@example.com","create_user":true}'
+```
+
+`{"error_code":"over_email_send_rate_limit"}` means the limit, not a broken configuration.
+
+_Cause 2 — the template sends a link, not a code._ This one is easy to miss because nothing
+errors. Supabase's stock **Magic Link** template contains only `{{ .ConfirmationURL }}`, so the
+email arrives with a button and no digits — while the app is asking for six of them (§S03).
+Fix it in **Authentication → Email Templates → Magic Link**:
+
+```html
+<h2>Your KyaScene code</h2>
+<p>Enter this code in the app:</p>
+<p style="font-size:28px;letter-spacing:4px"><strong>{{ .Token }}</strong></p>
+<p>It expires in an hour. If you didn't ask for it, ignore this email.</p>
+```
+
+`{{ .Token }}` is the six-digit code. Without it in the template, no code will ever arrive no
+matter how long you wait.
+
+**The real fix, needed before any tester exists.** Configure a custom SMTP provider under
+**Authentication → Emails → SMTP Settings**. §20 expects the funnel to work in beta, and the
+built-in mailer is explicitly not built for that — it is rate-limited and, on some plans,
+delivers only to addresses on your Supabase organisation. Sender domain should be
+`kyascene.app`.
+
+Choosing the provider is a **§22 founder decision**: an email vendor processes tester email
+addresses, which is personal data. Resend, Postmark and SendGrid all have free tiers that cover
+a closed beta comfortably. Once chosen, record it as an ADR.
 
 **"This invitation could not be used."** The digest does not match. Check the code is 6–16
 alphanumeric characters and that `pgcrypto` was installed before the insert.
