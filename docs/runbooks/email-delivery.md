@@ -13,6 +13,9 @@ Provider choice and reasoning: [ADR-0005](../decisions/0005-transactional-email.
 
 Total time: about 15 minutes, plus DNS propagation.
 
+**Blocked on DNS and want to test now?** [testing-without-email.md](testing-without-email.md)
+generates a real sign-in code without sending anything, so the whole flow is walkable today.
+
 ## 1. Create the Resend account
 
 Sign up at **resend.com**. The free tier covers 3,000 messages a month and 100 a day, which is

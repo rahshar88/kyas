@@ -369,24 +369,26 @@ routes"_, is built and tested but not yet demonstrated.
 | Consent version consistency across app, function and SQL      | `scripts/verify-consent-version.mjs`                |
 | Admin bundle carries no privileged credential                 | `scripts/verify-admin-bundle.mjs`                   |
 | Operations console                                            | `pnpm run admin:dev`                                |
+| Sign-in code without an inbox, and operator grants            | `pnpm run dev:code`, `pnpm run dev:admin`           |
 
 ## Documentation map
 
-| Document                                              | Covers                                                            |
-| ----------------------------------------------------- | ----------------------------------------------------------------- |
-| [Master specification](master-specification.md)       | The source of truth, committed verbatim                           |
-| [Scope boundaries](scope-boundaries.md)               | P0 non-goals, the drift guardrail                                 |
-| [Architecture overview](../architecture/overview.md)  | Layering, feature modules, packages                               |
-| [Navigation](../architecture/navigation.md)           | Full route map with milestone owners                              |
-| [Environments](../architecture/environments.md)       | The three environments and where each value lives                 |
-| [ADRs](../decisions/README.md)                        | Stack, monorepo, environment validation, and the §22 founder list |
-| [First run on a Mac](../runbooks/first-run-on-mac.md) | Xcode, CocoaPods, simulator, real iPhone                          |
-| [Supabase setup](../runbooks/supabase-setup.md)       | Creating a project, keys, invite codes                            |
-| [Email delivery](../runbooks/email-delivery.md)       | Resend, DNS, templates — the only way sign-in codes arrive        |
-| [Device builds and OTA](../runbooks/device-builds.md) | Untethered install, updates without a cable                       |
-| [Admin console](../runbooks/admin-console.md)         | Running it, and how to become an operator                         |
-| [CI](../runbooks/ci.md)                               | What each job proves, and the audit allow-list                    |
-| [Local development](../runbooks/local-development.md) | Day-to-day commands and common failures                           |
+| Document                                                      | Covers                                                            |
+| ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [Master specification](master-specification.md)               | The source of truth, committed verbatim                           |
+| [Scope boundaries](scope-boundaries.md)                       | P0 non-goals, the drift guardrail                                 |
+| [Architecture overview](../architecture/overview.md)          | Layering, feature modules, packages                               |
+| [Navigation](../architecture/navigation.md)                   | Full route map with milestone owners                              |
+| [Environments](../architecture/environments.md)               | The three environments and where each value lives                 |
+| [ADRs](../decisions/README.md)                                | Stack, monorepo, environment validation, and the §22 founder list |
+| [First run on a Mac](../runbooks/first-run-on-mac.md)         | Xcode, CocoaPods, simulator, real iPhone                          |
+| [Supabase setup](../runbooks/supabase-setup.md)               | Creating a project, keys, invite codes                            |
+| [Email delivery](../runbooks/email-delivery.md)               | Resend, DNS, templates — the only way sign-in codes arrive        |
+| [Device builds and OTA](../runbooks/device-builds.md)         | Untethered install, updates without a cable                       |
+| [Admin console](../runbooks/admin-console.md)                 | Running it, and how to become an operator                         |
+| [Testing without email](../runbooks/testing-without-email.md) | Signing in while SMTP is still pending                            |
+| [CI](../runbooks/ci.md)                                       | What each job proves, and the audit allow-list                    |
+| [Local development](../runbooks/local-development.md)         | Day-to-day commands and common failures                           |
 
 ## Open questions for the founder
 
