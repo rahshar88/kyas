@@ -345,13 +345,61 @@ naive scan fails on a safe bundle and gets switched off. It matches a secret's s
 JWTs to read the role claim, and asserts a publishable key **is** present, without which a
 bundle built with no environment would pass while proving nothing.
 
+### Demonstrated on a real iPhone, 14 August
+
+Milestone 2's exit criterion — _"an administrator can approve a submitted student and the user
+can enter approved routes"_ — is met. Sign in, invitation, all eleven registration steps,
+submission, server-side validation, operator review, and the phone showing **Approved**, on a
+standalone build over a real network.
+
+Email is still not configured, so the sign-in code was generated with
+[`dev:code`](../runbooks/testing-without-email.md) rather than delivered. The approval itself
+was made in SQL, because an operator may not review their own registration (below) — the audit
+record says so.
+
+### What device testing caught that the test suite did not
+
+Nine bugs, none of which any of the 366 unit tests or 104 database assertions could have seen.
+Each lived at a seam a test either owns both sides of, or cannot reach at all:
+
+| The seam                    | What was wrong                                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Screens ↔ repositories      | S06–S08 wrote to the local draft only; nothing ever sent them. The server saw no study details at all    |
+| App ↔ GoTrue                | A rejected sign-in code matched a rule meant for expired JWTs, so it read as "your session has ended"    |
+| App ↔ GoTrue                | A 429 arrived as `NETWORK_UNAVAILABLE` — "we couldn't reach KyaScene", from a server answering instantly |
+| Browser ↔ Edge Functions    | No function answered a CORS preflight. The app is not a browser, so this survived two milestones         |
+| SQL ↔ its own callers       | `admin_review_registration` refused a self-review as `not_permitted`, claiming the founder had no access |
+| Build ↔ update              | `eas update` does not read build profiles, so an update could silently replace a build's configuration   |
+| Build ↔ device              | A native module changed the fingerprint, so every update after it reached nothing, silently              |
+| Spec ↔ schema               | `display_name` is read by the console and clearable by moderation, but no screen ever collected a name   |
+| Supabase settings ↔ the app | The OTP length was 8; the schema, the input and the button all assumed 6                                 |
+
+The pattern is consistent enough to be worth stating: **a unit test cannot find a disagreement
+between two systems when it owns both sides of the conversation.** Every mock encodes the same
+assumption the code does, so the pair agrees with itself and the test passes. Each of these
+needed either a real server, a real browser, or a real phone.
+
+The response has not been to add more mocks. `errors.test.ts` pins verbatim responses observed
+from the live project; `verify-function-cors.mjs` and `verify-eas-build-env.mjs` reproduce what
+a browser and a build server actually do; `DiagnosticDetail` prints the underlying failure on
+internal builds, because three of these cost a day each purely in guessing what a calm sentence
+meant.
+
 ### Still open
 
 Nobody can receive a sign-in code until custom SMTP is configured
-([ADR-0005](../decisions/0005-transactional-email.md)), which is blocked on DNS. Until then the
-flow cannot be walked end to end by anyone, including the founder — so Milestone 2's exit
-criterion, _"an administrator can approve a submitted student and the user can enter approved
-routes"_, is built and tested but not yet demonstrated.
+([ADR-0005](../decisions/0005-transactional-email.md)), which is blocked on DNS. Testers can be
+onboarded with `dev:code` in the meantime, but not by themselves.
+
+**No screen collects a name.** S02–S17 never ask for one, so every applicant reads as "No name"
+in the console and Milestone 3's home screen would have nobody to greet. The column, the
+console column and the `display_name_cleared` moderation action all already exist. Proposed
+fix: S13 becomes "Your name and photo" — name required, photo still optional — which also gives
+that step a real completion signal, resolving why it is currently excluded from resume.
+
+**An operator cannot review their own registration**, by design. It follows that a single
+operator cannot test the review flow through the console; either a second operator is added, or
+founder accounts are approved in SQL with an audit record marking it a bootstrap.
 
 ---
 
