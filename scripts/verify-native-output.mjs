@@ -119,6 +119,47 @@ if (existsSync(iosDir)) {
       !(plist ?? '').includes('NSLocationAlwaysAndWhenInUseUsageDescription'),
   );
 
+  /**
+   * Over-the-air updates, checked in the generated native project rather than the JS config.
+   *
+   * This is the file the installed binary actually reads. A regression here produces an app
+   * that builds, signs, installs and runs perfectly — and silently never checks for an update,
+   * so `eas update` reports success while every phone stays on old code. Nothing in the JS
+   * config or the test suite would notice.
+   *
+   * Skipped when no project id is configured, so a fork without an Expo account still passes.
+   */
+  const expoPlistPath = findFirst(
+    iosDir,
+    (name, full) => name === 'Expo.plist' && !full.includes('Pods'),
+  );
+  const expoPlist = expoPlistPath ? read(expoPlistPath) : null;
+  const projectId = process.env.EAS_PROJECT_ID ?? 'd1f7b10c-c114-4d66-8f34-fe0892d0bec9';
+
+  if (projectId === '') {
+    console.log('  (no EAS project id configured — skipping update checks)');
+  } else {
+    check('ios: Expo.plist exists', expoPlist !== null);
+    check(
+      'ios: updates are enabled',
+      expoPlist?.includes('<key>EXUpdatesEnabled</key>\n    <true/>') ?? false,
+    );
+    check(
+      'ios: update URL matches the EAS project',
+      expoPlist?.includes(`https://u.expo.dev/${projectId}`) ?? false,
+      'the installed binary would fetch updates from the wrong project, or none at all',
+    );
+    check(
+      'ios: runtime version uses the fingerprint policy',
+      expoPlist?.includes('<string>file:fingerprint</string>') ?? false,
+      'without it, an update can reach a binary whose native code cannot run it',
+    );
+    check(
+      'ios: checks for updates on launch',
+      expoPlist?.includes('<string>ALWAYS</string>') ?? false,
+    );
+  }
+
   const entitlementsPath = findFirst(iosDir, (name) => name.endsWith('.entitlements'));
   const entitlements = entitlementsPath ? read(entitlementsPath) : '';
   const hasApplinks = (entitlements ?? '').includes('applinks:kyascene.app');
