@@ -177,6 +177,34 @@ deployed the `redeem-invite` function to project `yvofvmrsnhddpthzgkep`. Verifie
 outside: tables exist, anonymous callers see nothing, and the function returns our own §12.3
 envelope.
 
+### Untethered distribution, 13 August
+
+Reviewing a change meant being at the Mac with the phone plugged in, because
+`expo run:ios --device` serves JavaScript from Metro. Replaced with EAS Build (a real signed
+app installed once) plus EAS Update (new JavaScript in seconds, over the air).
+
+The EAS project is owned by the **`nighthawk-productions-pty-ltd`** organisation rather than a
+personal account — [ADR-0004](../decisions/0004-eas-project-ownership.md), a §22 founder
+decision, and an expensive one to reverse because the update URL is baked into every installed
+binary.
+
+`runtimeVersion` uses the **fingerprint** policy, which hashes the native project. A screen or
+copy change ships over the air; a native change makes EAS refuse the update and ask for a new
+build, rather than shipping JavaScript the installed binary cannot run.
+
+**`eas init` created the project and then failed** with
+`Cannot read properties of undefined (reading 'CommonJS')`. The cause is not the config: it is
+the CLI trying to write the project id back into what it assumes is a static `app.json`, while
+this repository uses a dynamic `app.config.ts` so the environment can be validated at config
+time (ADR-0003). `npx expo config --json` resolves the same file cleanly. The id was pasted in
+from the dashboard, and `verify-app-config.mjs` now asserts that `updates.url`,
+`runtimeVersion.policy` and `extra.eas.projectId` agree — a mistyped id would otherwise build,
+install and quietly fetch another project's JavaScript.
+
+`owner` is stated explicitly in the config because the founder's Expo login can reach more than
+one account; without it EAS resolves against the personal account and reports a project that
+does not exist there.
+
 ### Still open
 
 The exit criterion — _"an invited tester can authenticate and resume after app restart"_ —

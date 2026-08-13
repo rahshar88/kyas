@@ -105,6 +105,31 @@ check(
 check('records the 1818 attribution', config.extra?.poweredBy === '1818');
 check(`extra.environment is ${environment}`, config.extra?.environment === environment);
 
+/**
+ * Over-the-air updates (§4.2).
+ *
+ * Only asserted once a project id is configured, because a fresh clone without an Expo
+ * account must still pass. When it IS configured, the three values have to agree: an
+ * `updates.url` pointing at a different project than `extra.eas.projectId` would build and
+ * install perfectly, then quietly serve another app's JavaScript to a tester's phone.
+ */
+const projectId = config.extra?.eas?.projectId;
+if (projectId === undefined) {
+  console.log(`  (no EAS project id configured — skipping update checks)`);
+} else {
+  check(
+    'update URL matches the EAS project id',
+    config.updates?.url === `https://u.expo.dev/${projectId}`,
+    `got "${config.updates?.url}"`,
+  );
+  check(
+    'runtime version uses the fingerprint policy',
+    config.runtimeVersion?.policy === 'fingerprint',
+    `got ${JSON.stringify(config.runtimeVersion)}`,
+  );
+  check('names the owning Expo account', typeof config.owner === 'string' && config.owner !== '');
+}
+
 if (failures.length > 0) {
   console.error(`\n✖ app config verification failed for "${environment}"\n`);
   for (const failure of failures) console.error(`  - ${failure}`);

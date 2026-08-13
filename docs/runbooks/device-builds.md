@@ -20,13 +20,56 @@ and it ships over the air. Add a native module and the fingerprint changes, so E
 send that update to an incompatible binary and tells you a new build is needed — rather than
 shipping an update the installed app cannot run.
 
-## One-time setup
+## One-time setup — already done
 
-You need an Expo account. The free plan is enough to start; iOS builds queue rather than
-running immediately.
+The EAS project exists and its id is committed, so **there is nothing to set up**. Skip to
+"Build it" below.
+
+For the record, and for anyone forking this repository:
+
+- Project: [@nighthawk-productions-pty-ltd/kyascene](https://expo.dev/accounts/nighthawk-productions-pty-ltd/projects/kyascene)
+- Id: `d1f7b10c-c114-4d66-8f34-fe0892d0bec9`, committed in `apps/mobile/app.config.ts`
+- Why the organisation account and not a personal one: [ADR-0004](../decisions/0004-eas-project-ownership.md)
+
+You do need to be logged in on the machine that runs builds:
+
+```bash
+npx eas-cli@latest login
+```
+
+The free plan is enough to start; iOS builds queue rather than running immediately.
+
+### If you are pointing a fork at your own EAS project
+
+```bash
+cd ~/kyas/apps/mobile
+```
+
+```bash
+npx eas-cli@latest init
+```
+
+It will create the project and then fail to write the id back with
+`Cannot read properties of undefined (reading 'CommonJS')`. That is expected — see the
+troubleshooting section. Take the id from the project dashboard and edit
+`apps/mobile/app.config.ts`:
+
+```ts
+const EAS_OWNER = process.env.EAS_OWNER ?? 'your-account';
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? 'your-uuid';
+```
+
+Set both to `''` and over-the-air updates are simply not configured; everything else works
+exactly as before, so a fresh clone is never blocked on having an Expo account.
+
+## Build it (about 15–25 minutes, mostly queueing)
 
 ```bash
 cd ~/kyas
+```
+
+```bash
+git pull
 ```
 
 Always after a pull. Dependencies change often, and `expo config` resolves native modules, so
@@ -34,37 +77,6 @@ a stale `node_modules` fails with an unhelpful "exited with non-zero code: 1":
 
 ```bash
 pnpm install
-```
-
-```bash
-npx eas-cli@latest login
-```
-
-```bash
-cd apps/mobile && npx eas-cli@latest init
-```
-
-`init` prints a **project ID** (a UUID). Because this project uses a dynamic `app.config.ts`
-rather than a static `app.json`, EAS cannot write it in for you. Open
-`apps/mobile/app.config.ts`, find:
-
-```ts
-const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
-```
-
-and put the id in the fallback:
-
-```ts
-const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? 'the-uuid-eas-printed';
-```
-
-Until that is filled in, over-the-air updates are simply not configured and everything else
-works exactly as before — a fresh clone is never blocked on having an Expo account.
-
-## Build it (about 15–25 minutes, mostly queueing)
-
-```bash
-cd ~/kyas
 ```
 
 ```bash
@@ -140,8 +152,27 @@ its job — the native project changed. Build again.
 **The phone does not pick up an update.** Force-close the app (swipe up from the app switcher)
 and reopen. Updates apply on launch, not while running.
 
-**"Project not configured for EAS Update."** `EAS_PROJECT_ID` is still empty in
-`app.config.ts`. See the one-time setup above.
+**"Project not configured for EAS Update."** `EAS_PROJECT_ID` is empty in `app.config.ts`. In
+this repository it is committed, so this should not happen — check you have not set an empty
+`EAS_PROJECT_ID` in your shell or in `apps/mobile/.env`, which overrides the committed value.
+
+**`eas init` fails with `Cannot read properties of undefined (reading 'CommonJS')`.** The
+project was almost certainly created anyway — check the dashboard before running it again.
+What failed is the CLI writing the project id back into your config: `eas init` expects a
+static `app.json`, and this repository uses a dynamic `app.config.ts` because the environment
+must be validated at config time (ADR-0003). Code cannot be machine-edited, so paste the id in
+by hand. It is not a sign that the config is broken — `npx expo config --json` inside
+`apps/mobile` resolves the same file without complaint, and that is the command every other
+EAS operation actually uses.
+
+**"Must configure EAS project by running `eas init`"** after that failure. `eas project:info`
+needs the id to already be configured, so it cannot help you recover it. Get it from the
+dashboard instead: **Project settings → General**, or click the project name on the overview
+page and read **ID** from the Project details panel.
+
+**"Project not found" or a project belonging to the wrong account.** Your Expo login can reach
+more than one account. `owner` in `app.config.ts` names the right one; if you have overridden
+`EAS_OWNER`, that is why.
 
 **`expo/bin/cli config --json exited with non-zero code: 1`.** Almost always a stale
 `node_modules` after a pull that changed dependencies. Run `pnpm install` from the repository

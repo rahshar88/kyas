@@ -8,13 +8,15 @@ Record."_
 | [0001](0001-mobile-stack.md)           | Mobile technology stack and pinned versions         | accepted |
 | [0002](0002-monorepo-and-tooling.md)   | Monorepo layout, pnpm hoisting and config placement | accepted |
 | [0003](0003-environment-validation.md) | Environment configuration and fail-loud validation  | accepted |
+| [0004](0004-eas-project-ownership.md)  | EAS project ownership and untethered distribution   | accepted |
 
 ## Decisions the coding agent may NOT make alone (§22)
 
 The agent may prepare recommendations, but the founder decides:
 
 - Final legal entity name used in store listings
-- Apple and Google developer-account ownership
+- Apple and Google developer-account ownership — the **EAS** side is decided in
+  [ADR-0004](0004-eas-project-ownership.md); Apple and Google remain open
 - Production Supabase region and paid plan
 - Privacy-policy and retention wording
 - Whether student verification requires documents

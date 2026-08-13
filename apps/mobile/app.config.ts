@@ -72,13 +72,33 @@ const SCENE_EMERALD = '#032C24';
 const LINK_HOST = 'kyascene.app';
 
 /**
- * EAS project id, written by `eas init`.
+ * The Expo account that owns the EAS project (§22 — an account-ownership decision, recorded
+ * in docs/decisions/0004-eas-project-ownership.md).
  *
- * Empty until an Expo account exists. While empty the app builds and runs exactly as before
- * — over-the-air updates are simply not configured — so a fresh clone is never blocked on
- * having an Expo account. See docs/runbooks/device-builds.md.
+ * Naming it here rather than relying on whoever is logged in matters because the founder's
+ * Expo login can access more than one account: without `owner`, EAS resolves the project
+ * against the personal account and reports a project that does not exist there.
  */
-const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
+const EAS_OWNER = process.env.EAS_OWNER ?? 'nighthawk-productions-pty-ltd';
+
+/**
+ * EAS project id — https://expo.dev/accounts/nighthawk-productions-pty-ltd/projects/kyascene.
+ *
+ * Not a secret: it appears in every update URL the app fetches. It is committed rather than
+ * supplied by the environment because EAS Build servers evaluate this config from a clean
+ * checkout with no `.env`, so an id that lived only in a local file would leave the build
+ * with no project to attach to.
+ *
+ * `eas init` created the project but could not write the id back — a dynamic `app.config.ts`
+ * is not machine-editable, and the CLI reports that as an unrelated-looking
+ * "Cannot read properties of undefined (reading 'CommonJS')". Pasting the id from the
+ * dashboard is the supported path; see docs/runbooks/device-builds.md.
+ *
+ * The environment override exists so a fork can point at its own EAS project without editing
+ * source. When empty, over-the-air updates are simply not configured and everything else
+ * works unchanged, so a fresh clone is never blocked on having an Expo account.
+ */
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? 'd1f7b10c-c114-4d66-8f34-fe0892d0bec9';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const identity = IDENTITY[appEnv];
@@ -185,6 +205,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...(EAS_PROJECT_ID === ''
       ? {}
       : {
+          owner: EAS_OWNER,
           updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}` },
           runtimeVersion: { policy: 'fingerprint' as const },
         }),
