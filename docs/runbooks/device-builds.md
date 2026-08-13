@@ -161,8 +161,34 @@ Only when the native layer changes:
 - a change to `app.config.ts` permissions, icons, splash or identifiers
 - an Expo SDK upgrade
 
-`pnpm run eas:update` will tell you if the fingerprint no longer matches. Re-run
-`pnpm run eas:build:preview` and reinstall.
+Re-run `pnpm run eas:build:preview` and reinstall.
+
+### The failure mode this causes, which looks like nothing at all
+
+**A phone running an old build does not receive updates published for a new runtime version,
+and nothing tells you.** `eas update` succeeds, prints a URL, and reports no problem — it has
+published correctly, for a fingerprint no installed app is running. The phone is equally
+correct to ignore it: the JavaScript expects native modules that binary does not contain.
+
+The result is an app frozen at whatever code it shipped with, while every `git pull` and
+`eas:update` reports success. Bugs you fixed days ago keep reproducing exactly, error messages
+you rewrote keep appearing verbatim, and each round of debugging is spent on the symptoms of
+code that is no longer in the repository. It cost the better part of two days in August 2026:
+`expo-image-picker` arrived in `bf29f85`, which changed the fingerprint, and every update after
+it landed nowhere.
+
+So when a fix does not appear on the phone, check that the phone can receive it **before**
+debugging the fix:
+
+```bash
+pnpm run eas:versions
+```
+
+That prints recent builds and recent updates side by side. **Compare the runtime versions.** If
+the installed build's does not appear among the updates', no update can reach it and only a
+rebuild will. A doubt about which bundle a phone is running is a reason to rebuild, not a
+reason to keep reading logs — twenty minutes of queue is cheaper than an afternoon of
+diagnosing code that was never there.
 
 ## Which build should I be running?
 
