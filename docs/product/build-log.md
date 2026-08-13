@@ -490,10 +490,12 @@ anything a person typed. A test asserts the feedback comment — the field most 
 someone — never reaches the analytics adapter, because that leak would look perfectly ordinary
 in review.
 
-**Push cannot work yet, and says so.** `getExpoPushTokenAsync` needs an `aps-environment`
-entitlement that EAS adds only once an Apple push key exists, which is a §22 decision nobody
-has made. `unavailable` is therefore a first-class outcome, and the screen says it is our side
-rather than sending a tester to Settings to fix something that is not theirs to fix.
+**Push could not work when this was written, and said so.** `getExpoPushTokenAsync` needs an
+`aps-environment` entitlement that EAS adds only once an Apple push key exists. That key was
+generated on 14 August and a device registered on the first try — so `unavailable` is now a
+simulator, a lapsed credential or a fork with no project id, rather than the normal iOS
+outcome. Writing the branch as a first-class state rather than an error is why turning the key
+on required no code change at all.
 
 ### Still open
 
@@ -561,6 +563,40 @@ does not intervene. Without it a fatal error closes the app leaving no record, w
 report a tester describes as "it just shut" and the one an external tester will never reproduce
 on request.
 
+### Found on a device, 14 August
+
+Milestone 3 works on the phone: the beta home, voting, invitations, and push registration on the
+first attempt. Two defects came out of the same screenshots, and both had been in the codebase
+for a while.
+
+**Accent-coloured text failed WCAG AA in light mode — since Milestone 0.** Scene Saffron is a
+fill: Night on Saffron is 7.35:1, which is how PrimaryButton uses it. As _text_ it is 5.79:1 on
+Scene Emerald and **2.31:1 on Warm Cream**, failing AA and failing even the 3:1 large-text
+floor. Eight call sites used it as a text colour.
+
+`colors.ts` had predicted it in a comment written in Milestone 0 — _"Saffron is only 2.32:1 on
+Warm Cream, so light-mode accent text is not saffron"_ — and the code ignored it, because there
+was nothing else to reach for. `positiveText`, `dangerText` and `cautionText` all existed as
+AA-clearing tints; `accentText` did not. Every author picked the only accent token there was.
+
+The contrast test did not object for two reasons, and the second is the more useful one. It
+asserted `onAccent on accent`, which is the fill pairing and passes. And it only ever checked
+text against `background` — never against `backgroundElevated`, so **cards were untested**, and
+in the light scheme a card is white, the harder of the two surfaces.
+
+Dark mode passes throughout, which is why months of screenshots showed nothing. It took a
+photograph of a phone in light mode.
+
+**§S18's "Coming soon" label never appeared.** The spec says future cards are "all clearly
+labelled Coming soon **unless enabled**". `FeatureCard` had the badge, and `BetaHomeScreen`
+never used the state that renders it — every unbuilt feature was a voting card saying only "tap
+to vote". The section heading carried the meaning; the cards did not. Being votable does not
+make a feature available, so a voting card now says both.
+
+Neither was findable by the test suite as written. The first needed a surface no test covered;
+the second needed reading the specification against the screen rather than against the
+component.
+
 ### Still open — and four of these are blockers
 
 1. **Live privacy, terms and support URLs.** §16.4 makes a missing privacy link a ship blocker
@@ -576,6 +612,11 @@ on request.
 6. **Named owners** for registration approval, support response and safety escalation. §18 asks
    for people; `ios-release.md` currently offers a daily SQL query, which is a placeholder and
    says so.
+
+**Closed since:** the Apple push key exists, so `push_tokens` fills on iOS and **Identifiers →
+Device ID** is now declared in `privacy-disclosures.md`. Worth noting how that arrived: EAS
+asked mid-build whether to generate a key, and saying yes changed a legal declaration. Anything
+that turns a dormant column into a live one does.
 
 ---
 

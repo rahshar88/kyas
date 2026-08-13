@@ -24,6 +24,7 @@ Established by reading the code, not by recollection:
 | Question                           | Answer                                                                                                                                           |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Third-party SDKs that collect data | **None shipping today.** Analytics and crash reporting sit behind adapters with no-op implementations; the vendor is a §22 decision              |
+| Push notification service          | **Apple APNs and Expo**, for token registration only. A token is minted by Apple and exchanged through Expo's service; nothing is sent           |
 | Data sent to a third party         | **None today.** The only network destination is the project's own Supabase instance                                                              |
 | Tracking across apps or websites   | **No.** No advertising identifier is read, no attribution SDK is present                                                                         |
 | Precise location                   | **No.** `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` and `ACCESS_BACKGROUND_LOCATION` are blocked in the Android manifest and asserted by CI |
@@ -93,6 +94,27 @@ analytics, and the §S20 screen warns against including passwords or identity do
 - **Purposes:** App Functionality
 - **Where:** every table, as `user_id`
 
+### Identifiers → Device ID
+
+- **Collected:** yes, optional
+- **Linked to identity:** yes
+- **Used for tracking:** no
+- **Purposes:** App Functionality
+- **Where:** `push_tokens.token`
+
+An Expo push token, stored only if someone turns notifications on at S21 → Notifications. It
+identifies a device rather than a person, and it is linked to identity because the row carries
+`user_id` — that is what makes a notification reach the right phone.
+
+Declared from **14 August**, when an Apple Push Notifications key was generated and a real
+device stored a token for the first time. Before that `getExpoPushTokenAsync` threw without the
+`aps-environment` entitlement, so the table could not fill on iOS at all. The column existed
+and was classified; what changed is that it stopped being unreachable.
+
+**Nothing is sent.** Milestone 3 registers tokens and has no send path (§21.5). The
+notifications screen says so in those words, because asking for permission and then never using
+it is how people learn to decline.
+
 ### Other Data
 
 - **Collected:** yes
@@ -147,6 +169,7 @@ path"_ for Android, which does **not exist yet** and is tracked as a Milestone 5
 | Name                   | Yes       | No     | Required | App functionality |
 | Email address          | Yes       | No     | Required | App functionality |
 | User IDs               | Yes       | No     | Required | App functionality |
+| Device or other IDs    | Yes       | No     | Optional | App functionality |
 | Photos                 | Yes       | No     | Optional | App functionality |
 | Approximate location   | Yes       | No     | Required | App functionality |
 | Other personal info    | Yes       | No     | Required | App functionality |

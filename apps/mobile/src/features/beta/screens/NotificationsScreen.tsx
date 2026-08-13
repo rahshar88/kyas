@@ -110,10 +110,10 @@ export function NotificationsScreen() {
         ) : null}
 
         {/**
-         * `unavailable` is its own state, and an honest one: iOS needs an `aps-environment`
-         * entitlement that EAS adds only once an Apple push key exists, which is a §22 account
-         * decision nobody has made. Reporting that as a failure the tester caused would send
-         * them to Settings to fix something that is not theirs to fix.
+         * `unavailable` is its own state, and an honest one. It was the normal iOS outcome
+         * until an Apple push key existed; now it means a simulator, a lapsed credential, or a
+         * fork without an EAS project id. Reporting any of those as a failure the tester caused
+         * would send them to Settings to fix something that is not theirs to fix.
          */}
         {result?.status === 'unavailable' ? (
           <View

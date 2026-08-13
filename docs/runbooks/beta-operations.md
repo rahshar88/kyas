@@ -182,7 +182,10 @@ teaches its testers to turn notifications off.
 select platform, count(*) from public.push_tokens group by platform;
 ```
 
-On iOS, `getExpoPushTokenAsync` needs an `aps-environment` entitlement that EAS adds only once
-an Apple push key exists — a §22 account decision. Until it is made, the notifications screen
-reports "not set up on this build yet" and says it is our side, not the tester's. This table
-staying empty is expected, not a fault.
+An Apple Push Notifications key was generated on 14 August, so the `aps-environment` entitlement
+is now in the build and iOS devices register normally. If this table is empty it means nobody
+has turned notifications on — not that the platform is refusing.
+
+There is still no send path, and that is deliberate. Building one before anyone has agreed what
+is worth interrupting a person for is how a beta teaches its testers to switch notifications
+off. When there is something worth sending, the tokens are here.

@@ -14,10 +14,11 @@ import { Platform } from 'react-native';
  * a described outcome, because "not now", "no thanks" and "this build has no push key" are all
  * ordinary states that the screen has to render calmly.
  *
- * That last one is not hypothetical. `getExpoPushTokenAsync` needs the `aps-environment`
- * entitlement on iOS, which EAS only adds once an Apple push key exists — a §22 account
- * decision that has not been made. Until it is, this returns `unavailable` on a real device,
- * and the screen says so rather than showing a spinner forever or crashing.
+ * `unavailable` is not a hypothetical branch. `getExpoPushTokenAsync` needs the
+ * `aps-environment` entitlement on iOS, which EAS adds only once an Apple push key exists —
+ * that key was generated on 14 August, so a real device now registers normally. The branch
+ * remains correct for a simulator, for a fork with no EAS project id, and for any future build
+ * whose credentials have lapsed. What changed is that it stopped being the expected outcome.
  */
 export type PushRegistration =
   | { status: 'registered'; token: string; platform: 'ios' | 'android' }
