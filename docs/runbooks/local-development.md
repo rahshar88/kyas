@@ -8,7 +8,22 @@ cp apps/mobile/.env.example apps/mobile/.env   # then fill in the Supabase value
 pnpm --filter @kyascene/mobile start
 ```
 
+## After every `git pull`, run `pnpm install`
+
+Dependencies change between commits, and the failure mode is misleading rather than obvious —
+`expo config`, `eas init` and `expo run:ios` all resolve native modules, so a stale
+`node_modules` surfaces as `exited with non-zero code: 1` rather than "module not found".
+
+```bash
+pnpm install
+```
+
 ## Common failures
+
+### `expo/bin/cli config --json exited with non-zero code: 1`
+
+Stale `node_modules`. See above. If installing does not fix it, `npx expo config --json`
+inside `apps/mobile` prints the underlying error instead of just the exit code.
 
 ### `EnvValidationError: KyaScene environment configuration is invalid`
 

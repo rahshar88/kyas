@@ -72,6 +72,13 @@ cd ~/kyas
 git pull
 ```
 
+Always after a pull — dependencies change, and a stale `node_modules` produces confusing
+failures further down:
+
+```bash
+pnpm install
+```
+
 Once per machine. This prints a verification code and opens your browser:
 
 ```bash

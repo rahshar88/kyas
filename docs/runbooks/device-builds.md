@@ -29,6 +29,13 @@ running immediately.
 cd ~/kyas
 ```
 
+Always after a pull. Dependencies change often, and `expo config` resolves native modules, so
+a stale `node_modules` fails with an unhelpful "exited with non-zero code: 1":
+
+```bash
+pnpm install
+```
+
 ```bash
 npx eas-cli@latest login
 ```
@@ -88,6 +95,10 @@ git pull
 ```
 
 ```bash
+pnpm install
+```
+
+```bash
 pnpm run eas:update
 ```
 
@@ -131,6 +142,11 @@ and reopen. Updates apply on launch, not while running.
 
 **"Project not configured for EAS Update."** `EAS_PROJECT_ID` is still empty in
 `app.config.ts`. See the one-time setup above.
+
+**`expo/bin/cli config --json exited with non-zero code: 1`.** Almost always a stale
+`node_modules` after a pull that changed dependencies. Run `pnpm install` from the repository
+root and retry. To see the real error rather than the exit code, run `npx expo config --json`
+inside `apps/mobile` directly.
 
 ## Costs
 
