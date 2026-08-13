@@ -140,6 +140,58 @@ type VerificationRequestRow = {
     | null;
 };
 
+/** Milestone 3 rows (§11.1, §S18–§S22). */
+type FeatureFlagRow = {
+  key: string;
+  enabled: boolean;
+  description: string;
+  updated_at: string;
+};
+
+type AnnouncementRow = {
+  id: string;
+  title: string;
+  body: string;
+  published_at: string;
+  active: boolean;
+};
+
+type FeatureVoteRow = { user_id: string; feature_key: string; created_at: string };
+
+type FeedbackRow = {
+  id: string;
+  user_id: string;
+  reference: string;
+  rating: number | null;
+  category: 'bug' | 'confusing' | 'missing_feature' | 'safety_concern' | 'general';
+  comment: string;
+  screenshot_path: string | null;
+  created_at: string;
+};
+
+type PushTokenRow = {
+  token: string;
+  user_id: string;
+  platform: 'ios' | 'android';
+  created_at: string;
+  last_seen_at: string;
+};
+
+/**
+ * §S19 reads only what the owner-only policy exposes. The columns absent here are as
+ * deliberate as the ones present: `code_hash` is the ledger's business, not a client's.
+ */
+type InviteRow = {
+  id: string;
+  code_plain: string | null;
+  owner_user_id: string | null;
+  campaign: string | null;
+  capacity: number;
+  redeemed_count: number;
+  status: string;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -236,6 +288,44 @@ export type Database = {
       };
       verification_requests: {
         Row: VerificationRequestRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      feature_flags: {
+        Row: FeatureFlagRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      announcements: {
+        Row: AnnouncementRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      feature_votes: {
+        Row: FeatureVoteRow;
+        Insert: Pick<FeatureVoteRow, 'user_id' | 'feature_key'>;
+        Update: never;
+        Relationships: [];
+      };
+      feedback: {
+        Row: FeedbackRow;
+        Insert: Pick<FeedbackRow, 'user_id' | 'category' | 'comment'> &
+          Partial<Pick<FeedbackRow, 'rating' | 'screenshot_path'>>;
+        Update: never;
+        Relationships: [];
+      };
+      push_tokens: {
+        Row: PushTokenRow;
+        Insert: Pick<PushTokenRow, 'token' | 'user_id' | 'platform'> &
+          Partial<Pick<PushTokenRow, 'last_seen_at'>>;
+        Update: Partial<PushTokenRow>;
+        Relationships: [];
+      };
+      invites: {
+        Row: InviteRow;
         Insert: never;
         Update: never;
         Relationships: [];

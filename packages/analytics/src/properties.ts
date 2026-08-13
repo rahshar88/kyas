@@ -18,6 +18,23 @@ export interface AnalyticsProperties {
   /** Machine-readable success/failure code, e.g. an AppErrorCode. */
   outcomeCode?: string;
   /**
+   * Which unbuilt feature a tester voted for (§S18).
+   *
+   * A key from the hard-coded list on the beta home — `discovery_enabled`, `events_enabled`
+   * and so on. It is a constant chosen by us, not anything a person can type, so it carries no
+   * information about them beyond the vote itself, which is the entire point of recording it.
+   */
+  featureKey?: string;
+  /**
+   * The §S20 feedback category: bug, confusing, missing_feature, safety_concern, general.
+   *
+   * §S12's rule stated for feedback too — "record category identifiers, not free-text personal
+   * information". The comment a person writes is the part most likely to contain a name, an
+   * address or a complaint about someone; it stays in the database, where an operator reads it
+   * deliberately, and never reaches an analytics vendor.
+   */
+  feedbackCategory?: string;
+  /**
    * Bucketed duration, never a raw millisecond timestamp — §14.3 allows a "duration
    * bucket" only, because precise timings can re-identify a small beta cohort.
    */

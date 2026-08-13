@@ -44,6 +44,15 @@ export const REGISTRATION_ROUTES = {
   status: '/status',
 } as const;
 
+/** Routes inside `app/(approved)/` — §8.1's beta group, reachable only once approved. */
+export const APPROVED_ROUTES = {
+  home: '/home',
+  inviteFriends: '/invite-friends',
+  feedback: '/feedback',
+  settings: '/settings',
+  deleteAccount: '/delete-account',
+} as const;
+
 export function resolveDestination(input: DestinationInput): string {
   const { status, hasRedeemedInvite, draft } = input;
 
@@ -60,20 +69,19 @@ export function resolveDestination(input: DestinationInput): string {
     case 'deleted':
       return WELCOME_ROUTE;
 
+    /** §S18. The beta home is the destination for anyone who is actually in. */
+    case 'approved':
+      return APPROVED_ROUTES.home;
+
     /**
-     * §S17 owns all four of these. A rejected or suspended tester is deliberately sent to the
+     * §S17 owns the other three. A rejected or suspended tester is deliberately sent to the
      * same screen as a pending one — it is the screen that explains their state, and routing
      * them anywhere else would either hide the reason or drop them into a flow they cannot
      * complete.
-     *
-     * `approved` lands here too until Milestone 3 builds S18. That is honest rather than
-     * ideal: an approved tester sees "you are in" and a note that the beta home is coming,
-     * which beats a route that does not exist.
      */
     case 'pending_review':
     case 'rejected':
     case 'suspended':
-    case 'approved':
       return REGISTRATION_ROUTES.status;
 
     case 'invited':

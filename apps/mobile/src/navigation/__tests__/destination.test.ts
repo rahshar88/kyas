@@ -7,7 +7,7 @@ import {
   type RegistrationStep,
 } from '@kyascene/domain';
 
-import { REGISTRATION_ROUTES, resolveDestination } from '../destination';
+import { APPROVED_ROUTES, REGISTRATION_ROUTES, resolveDestination } from '../destination';
 import { WELCOME_ROUTE } from '../route-groups';
 
 const draftWith = (completed: RegistrationStep[]): RegistrationDraft => ({
@@ -75,12 +75,20 @@ describe('resolveDestination (§8.2, §10.2)', () => {
   });
 
   describe('after submission', () => {
-    it.each(['pending_review', 'rejected', 'suspended', 'approved'] as const)(
+    it.each(['pending_review', 'rejected', 'suspended'] as const)(
       'sends a %s account to the status screen',
       (status) => {
         expect(resolve(status)).toBe(REGISTRATION_ROUTES.status);
       },
     );
+
+    /**
+     * §S18. Approved used to land on S17 as well, which was honest while the beta home did
+     * not exist — a tester saw "you are in" and a note that it was coming. Now it exists.
+     */
+    it('sends an approved account into the beta', () => {
+      expect(resolve('approved')).toBe(APPROVED_ROUTES.home);
+    });
 
     /**
      * §20 and §8.2: a rejected or suspended account must not be able to walk back into

@@ -51,6 +51,7 @@ export interface ProfileRepository {
   listInterests(): Promise<CatalogueEntry[]>;
   listGoals(): Promise<CatalogueEntry[]>;
   saveDisplayName(userId: string, displayName: string): Promise<void>;
+  listChosenGoals(userId: string): Promise<string[]>;
   saveLanguages(userId: string, choices: LanguageChoice[]): Promise<void>;
   saveCommunities(userId: string, selection: CommunitySelection): Promise<void>;
   saveInterests(userId: string, codes: string[]): Promise<void>;
@@ -124,6 +125,25 @@ export const profileRepository: ProfileRepository = {
    * anything wider, and being refused by a trigger is a worse way to learn that than not
    * writing it in the first place.
    */
+  /**
+   * §S18 shows "top selected goals" back to the person who chose them.
+   *
+   * Ordered by rank, which is the order they put them in on S12 — the index *is* the rank, so
+   * reordering the query would silently misreport what someone said they needed most.
+   */
+  async listChosenGoals(userId: string): Promise<string[]> {
+    return guard(async () => {
+      const { data, error } = await getSupabase()
+        .from('profile_goals')
+        .select('goal_code, rank')
+        .eq('user_id', userId)
+        .order('rank', { ascending: true });
+      if (error) throw error;
+
+      return (data ?? []).map((row) => row.goal_code);
+    });
+  },
+
   async saveDisplayName(userId: string, displayName: string): Promise<void> {
     await guard(async () => {
       const { error } = await getSupabase()
