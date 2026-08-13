@@ -32,6 +32,7 @@ export interface ReferenceOption {
 export interface RegistrationRepository {
   ensureProfile(userId: string): Promise<ProfileSummary>;
   getStatus(userId: string): Promise<AccountStatus | null>;
+  hasRedeemedInvite(userId: string): Promise<boolean>;
   saveStudyDetails(userId: string, details: StudyDetails): Promise<void>;
   saveSydneyLocation(userId: string, location: SydneyLocation): Promise<void>;
   saveIndiaBackground(userId: string, background: IndiaBackground): Promise<void>;
@@ -90,6 +91,26 @@ export const registrationRepository: RegistrationRepository = {
       if (error) throw error;
 
       return data === null ? null : readStatus(data.status);
+    });
+  },
+
+  /**
+   * §S04 gates registration on a redeemed invitation, so "where do I resume?" cannot be
+   * answered by status alone — every status from `invited` to `onboarding` looks the same
+   * until you know whether a code was used.
+   *
+   * A student may read their own redemption row (and only their own), so this is a direct
+   * query rather than another Edge Function call.
+   */
+  async hasRedeemedInvite(userId: string): Promise<boolean> {
+    return guard(async () => {
+      const { count, error } = await getSupabase()
+        .from('invite_redemptions')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return (count ?? 0) > 0;
     });
   },
 

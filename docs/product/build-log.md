@@ -253,6 +253,108 @@ lockdown, an invite code minted, and a run through the flow on a device.
 
 ---
 
+## Milestone 2 — complete registration and administration
+
+**Status: built. Awaiting a real end-to-end run, which is blocked on email delivery.**
+
+### The database
+
+Eleven tables for S09–S17 plus the approval workflow, and four server functions. Rules are
+constraints wherever they can be, because a form is not the only way a row can be written:
+
+| Rule (spec)                                         | Where it actually holds                       |
+| --------------------------------------------------- | --------------------------------------------- |
+| S09 "duplicate language entries are prevented"      | Primary key                                   |
+| S12 "up to five, rank the top need"                 | `rank BETWEEN 1 AND 5` + unique rank per user |
+| S16 "repeated taps cannot create duplicates"        | Partial unique index on pending requests      |
+| S10 "prefer not to specify clears other selections" | Trigger pair, both directions                 |
+| §11.1 "immutable administrative history"            | Trigger refusing UPDATE and DELETE            |
+
+Rejection reasons are a closed enum because §S17 shows the student a category and never the
+operator's notes; free text written by an operator would leak internal reasoning to its
+subject. `admin_users` is a separate table rather than a column on `profiles` (§15.2) — a table
+a student can update must never describe that student's privileges.
+
+**102 database assertions**, up from 39. Seven mutants introduced and all seven caught: a
+mutable audit log, a widened language policy, editable consent, the S10 trigger removed,
+non-idempotent submission, an operator reviewing themselves, and a rejection with no category.
+
+### Problems found and fixed
+
+**Every incomplete registration would have returned a server error.** `v_missing || 'study'`
+resolves to `anyarray || anyarray`, so Postgres tried to parse the word "study" _as_ an array
+and raised "malformed array literal". The ordinary path — someone who has not finished a step —
+would have got a crash instead of the list of what to finish.
+
+**`admin_users` and `admin_audit_logs` were readable by every signed-in user.** The Milestone 1
+lockdown revoked from `authenticated` **once** rather than by default, so all eleven new tables
+received Supabase's default grant again and RLS was doing the whole job alone. The same failure
+as the anonymous-role one, recurring for the same reason: a one-time revoke does not constrain
+the future. `alter default privileges` now does.
+
+**Registration could never have been submitted.** The trigger guarding `profiles.status` keyed
+on `auth.uid() is null` — which describes how a caller connected, not whether it holds
+authority — so it refused `submit_registration`'s own server-side transition. It also carried
+`SECURITY DEFINER`, which it never needed and which would have made `current_user` the owner
+for every caller, permitting everything.
+
+**The launch screen sent every signed-in user to the welcome screen.** Milestone 0 shipped a
+placeholder with a comment saying Milestone 1 would replace it. Milestone 1 did not. A tester
+mid-registration was greeted with "Join the beta", and a submitted tester never saw their own
+status — so §10.2's resume and Milestone 2's exit criterion were both broken by a line nobody
+had looked at since. Now a pure `resolveDestination` function, exhaustive over all nine
+statuses and every registration step.
+
+**`deno check` listed its files by hand** and had silently omitted both new Edge Functions.
+
+### The app
+
+Nine screens. Three decisions that rejected the obvious alternative:
+
+- **S12 ranks by tap order, not drag.** Drag is conventional and the least accessible
+  interaction available, in a flow §7.5 requires to work under a screen reader. Each goal shows
+  its rank as a number, and the array index is the rank all the way to the database.
+- **S13 re-encodes the photograph** rather than stripping named EXIF tags. Phone photos carry
+  GPS coordinates, so an original upload would import precise location — which §13.2 forbids —
+  through a field nobody would audit. Re-encoding drops everything; naming tags drops what you
+  remembered.
+- **S15 has no accept-all control, and a test asserts its absence.** Required and optional
+  consent render from separate lists, so a future edit cannot sweep marketing into the required
+  loop. That single loop is how consent bundling gets introduced (§S15 forbids it).
+
+S13 is deliberately not a registration step: skipping is a valid outcome, so "skipped" and
+"never reached" would be the same state and §10.2's resume would loop on it forever.
+
+### The console
+
+A static Vite SPA — queue, detail, approve/reject, user search, audit log (§15.1's minimum).
+
+It holds no authority. The only credential in the bundle is the publishable key; every read
+goes through the `admin-console` Edge Function and every write through
+`admin-review-registration`, both passing the **verified JWT's** user id to a SECURITY DEFINER
+function that checks `admin_users`. Hiding the interface from a non-operator is a courtesy, not
+the control (§15.2).
+
+Reads are SQL functions rather than an "admins can read everything" RLS policy. Such a policy
+would have to live on `profiles` and `student_profiles`, widening what a _student's_ session can
+reach and making §20's isolation tests depend on the caller's role instead of the policy.
+
+`verify-admin-bundle.mjs` fails CI if a secret key or service-role JWT reaches the bundle. It is
+not a grep — `supabase-js` contains the literal `"sb_secret_"` in its own prefix detection, so a
+naive scan fails on a safe bundle and gets switched off. It matches a secret's shape, decodes
+JWTs to read the role claim, and asserts a publishable key **is** present, without which a
+bundle built with no environment would pass while proving nothing.
+
+### Still open
+
+Nobody can receive a sign-in code until custom SMTP is configured
+([ADR-0005](../decisions/0005-transactional-email.md)), which is blocked on DNS. Until then the
+flow cannot be walked end to end by anyone, including the founder — so Milestone 2's exit
+criterion, _"an administrator can approve a submitted student and the user can enter approved
+routes"_, is built and tested but not yet demonstrated.
+
+---
+
 ## Tooling added along the way
 
 | Capability                                                    | Where                                               |
@@ -264,6 +366,9 @@ lockdown, an invite code minted, and a run through the flow on a device.
 | `eas.json` structure and secret scan                          | `scripts/verify-eas-config.mjs`                     |
 | Schema + seed + function deployment                           | `pnpm run supabase:deploy <ref>`                    |
 | Untethered device builds and OTA updates                      | `pnpm run eas:build:preview`, `pnpm run eas:update` |
+| Consent version consistency across app, function and SQL      | `scripts/verify-consent-version.mjs`                |
+| Admin bundle carries no privileged credential                 | `scripts/verify-admin-bundle.mjs`                   |
+| Operations console                                            | `pnpm run admin:dev`                                |
 
 ## Documentation map
 
@@ -279,6 +384,7 @@ lockdown, an invite code minted, and a run through the flow on a device.
 | [Supabase setup](../runbooks/supabase-setup.md)       | Creating a project, keys, invite codes                            |
 | [Email delivery](../runbooks/email-delivery.md)       | Resend, DNS, templates — the only way sign-in codes arrive        |
 | [Device builds and OTA](../runbooks/device-builds.md) | Untethered install, updates without a cable                       |
+| [Admin console](../runbooks/admin-console.md)         | Running it, and how to become an operator                         |
 | [CI](../runbooks/ci.md)                               | What each job proves, and the audit allow-list                    |
 | [Local development](../runbooks/local-development.md) | Day-to-day commands and common failures                           |
 

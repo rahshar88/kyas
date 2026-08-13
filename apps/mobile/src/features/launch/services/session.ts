@@ -4,21 +4,21 @@ export interface RestoredSession {
   status: AccountStatus;
 }
 
-/** How long S00 will wait before giving up and showing a retry path. */
+/**
+ * How long S00 will wait before giving up and showing a retry path.
+ *
+ * §S00: "After a bounded timeout, show retry and offline guidance. Never trap the user on a
+ * permanent splash screen." The bound covers session restoration and the two lookups that
+ * decide where to go — from the user's side that is one wait, and a query that hangs after an
+ * instant restore still leaves them staring at a splash screen.
+ */
 export const SESSION_RESTORE_TIMEOUT_MS = 4_000;
 
 /**
- * Stub for Milestone 0.
+ * Session restoration now lives in `AuthProvider`, which reads the platform keychain and
+ * fetches server status (§8.2: guards derived from server status, not client state).
  *
- * S00's real job is to read the secure session, check network state, check the onboarding
- * draft version and fetch server account status. None of that exists until Milestone 1 —
- * there is no Supabase client, no session and no status endpoint yet. This resolves `null`
- * (no session) so the launch screen exercises its real routing and timeout paths against a
- * seam that Milestone 1 replaces rather than against nothing.
- *
- * Deliberately not reading SecureStore yet: writing a read against a key format we have
- * not designed would bake in a guess.
+ * This stub returned `null` unconditionally as a Milestone 0 seam. It is kept only as the home
+ * of the timeout constant — a function that always says "no session" would silently sign
+ * everyone out if anything called it again.
  */
-export async function restoreSession(): Promise<RestoredSession | null> {
-  return null;
-}

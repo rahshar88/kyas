@@ -84,6 +84,16 @@ type CatalogueRow = {
   sort_order: number;
 };
 
+/**
+ * §S04. A student may read their own redemption row and nothing else — that single fact is
+ * what tells the launch screen whether to resume registration or ask for an invitation.
+ */
+type InviteRedemptionRow = {
+  invite_id: string;
+  user_id: string;
+  redeemed_at: string;
+};
+
 type LanguageRow = { code: string; name: string; active: boolean; sort_order: number };
 
 type ProfileLanguageRow = {
@@ -155,6 +165,12 @@ export type Database = {
         Row: EducationProviderRow;
         Insert: EducationProviderRow;
         Update: Partial<EducationProviderRow>;
+        Relationships: [];
+      };
+      invite_redemptions: {
+        Row: InviteRedemptionRow;
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       languages: {
