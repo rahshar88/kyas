@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { useAuth } from '@/providers/AuthProvider';
 import { analytics } from '@/services/analytics';
 
@@ -33,6 +34,7 @@ export function SignInScreen() {
 
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const [cause, setCause] = useState<unknown>();
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export function SignInScreen() {
     }
 
     setError(undefined);
+    setCause(undefined);
     setSubmitting(true);
 
     try {
@@ -66,6 +69,8 @@ export function SignInScreen() {
        * So a rate limit advances anyway, and S03 explains that no new code was sent. Every
        * other failure still stops here, because those genuinely mean no code exists.
        */
+      setCause(caught);
+
       if (isAppError(caught) && caught.code === 'RATE_LIMITED') {
         router.push({
           pathname: '/(public)/verify-email',
@@ -100,6 +105,8 @@ export function SignInScreen() {
           error={error}
           testID="sign-in-email"
         />
+
+        <DiagnosticDetail error={cause} testID="sign-in-diagnostic" />
 
         {/* §S02: "Explain why the email is required and that it will not appear publicly." */}
         <Text style={[typography.caption, { color: theme.textSecondary }]}>

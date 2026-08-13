@@ -85,6 +85,33 @@ export function toAppError(error: unknown, fallback: AppErrorCode = 'UNKNOWN'): 
   return new AppError(fallback, { cause: error });
 }
 
+/**
+ * A one-line technical summary of what actually failed, for a developer looking at a phone.
+ *
+ * §6.4 is right that a user must never be shown a raw backend message — so this is never
+ * rendered in production, and `DiagnosticDetail` enforces that. But the rule left nobody able
+ * to tell a DNS failure from a rejected key from an expired code, because all three arrive as
+ * one sentence of reassuring copy. Three separate mislabelling bugs have now taken a round
+ * trip through a person holding a phone, guessing.
+ *
+ * This unwraps `cause`, which is where `toAppError` puts the original — so the classification
+ * and the evidence for it can be read together.
+ */
+export function describeCause(error: unknown): string | undefined {
+  const original = error instanceof AppError ? (error.cause ?? error) : error;
+  if (original === undefined || original === null) return undefined;
+
+  const candidate = original as SupabaseLikeError;
+  const parts = [
+    candidate.name,
+    candidate.status === undefined ? undefined : `HTTP ${candidate.status}`,
+    candidate.code,
+    candidate.message,
+  ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+
+  return parts.length > 0 ? parts.join(' · ') : String(original);
+}
+
 /** Wraps a call so callers only ever have to catch `AppError`. */
 export async function guard<T>(
   operation: () => Promise<T>,

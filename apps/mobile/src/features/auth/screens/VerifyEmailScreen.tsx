@@ -20,6 +20,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { useAuth } from '@/providers/AuthProvider';
 
 /** §S03: "resend after countdown". Long enough to discourage hammering the rate limit. */
@@ -43,6 +44,8 @@ export function VerifyEmailScreen() {
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | undefined>();
+  /** The original throw, kept for `DiagnosticDetail`. Never rendered in production. */
+  const [cause, setCause] = useState<unknown>();
   const [submitting, setSubmitting] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
   const attempted = useRef<string | null>(null);
@@ -66,6 +69,7 @@ export function VerifyEmailScreen() {
       }
 
       setError(undefined);
+      setCause(undefined);
       setSubmitting(true);
 
       try {
@@ -73,6 +77,7 @@ export function VerifyEmailScreen() {
         // Where they land next depends on server status, which the root layout resolves.
         router.replace('/');
       } catch (caught) {
+        setCause(caught);
         setError(
           isAppError(caught)
             ? caught.code === 'VALIDATION_FAILED'
@@ -120,11 +125,13 @@ export function VerifyEmailScreen() {
     if (!email || cooldown > 0) return;
     setCooldown(RESEND_COOLDOWN_SECONDS);
     setError(undefined);
+    setCause(undefined);
     attempted.current = null;
 
     try {
       await requestCode(email);
     } catch (caught) {
+      setCause(caught);
       setError(isAppError(caught) ? APP_ERROR_MESSAGES[caught.code] : APP_ERROR_MESSAGES.UNKNOWN);
     }
   };
@@ -151,6 +158,8 @@ export function VerifyEmailScreen() {
           editable={!submitting}
           testID="verify-code"
         />
+
+        <DiagnosticDetail error={cause} testID="verify-diagnostic" />
 
         {notSent === '1' ? (
           <Text
