@@ -60,17 +60,19 @@ real usage rather than guessed at.
 | `LoadingSkeleton`     | pending                                  | S06 (M1)           |
 | `FullScreenError`     | pending                                  | S00 hardening (M1) |
 | `MultiSelectChips`    | ✅ built                                 | S09 (M2)           |
-| `StudentAvatar`       | pending                                  | S13 (M2)           |
+| `StudentAvatar`       | ✅ built                                 | S13 (M2), S18 (M3) |
 | `ProfileSummaryCard`  | ✅ built                                 | S16 (M2)           |
 | `PermissionExplainer` | pending                                  | S13 (M2)           |
 | `StatusBadge`         | ✅ built                                 | S17 (M2)           |
 | `IconButton`          | pending                                  | S13 (M2)           |
 | `Toast`               | pending                                  | S14 (M2)           |
-| `EmptyState`          | pending                                  | S18 (M3)           |
-| `ConfirmationSheet`   | pending                                  | S22 (M3)           |
-| `DestructiveButton`   | pending                                  | S22 (M3)           |
+| `EmptyState`          | ✅ built                                 | S18 (M3)           |
+| `ConfirmationSheet`   | ✅ built                                 | S22 (M3)           |
+| `DestructiveButton`   | ✅ built                                 | S22 (M3)           |
 | `ToggleRow`           | ✅ built (beyond §7.4)                   | S14 (M2)           |
 | `ConsentCheckbox`     | ✅ built (beyond §7.4)                   | S15 (M2)           |
+| `FeatureCard`         | ✅ built (beyond §7.4)                   | S18 (M3)           |
+| `RatingField`         | ✅ built (beyond §7.4)                   | S20 (M3)           |
 
 Two components are not in §7.4's list of 26. `ToggleRow` exists because S14 needs six labelled
 switches on one screen and S08 had already written two inline — six hand-built rows is six
