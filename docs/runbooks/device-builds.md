@@ -118,15 +118,40 @@ It bundles the JavaScript, uploads it, and every installed copy on the `preview`
 it up. **Close the app fully and reopen it** — updates are fetched on launch, so a background
 app will not see them.
 
-Two things the command pins so it never stops to ask:
+### The trap this command exists to close
 
-- `--environment development`, matching what the `preview` build profile actually runs as
-  (`EXPO_PUBLIC_ENVIRONMENT=development`). It selects which EAS-hosted variables to use; this
-  project keeps its publishable values in `eas.json` and `.env` instead, so the choice changes
-  nothing — but an interactive prompt in the middle of a one-line command is its own problem.
-- `--message` set to the last commit subject, so the update list in the Expo dashboard reads
-  as a history rather than a column of blanks. Working out which update broke something is
-  otherwise a matter of matching timestamps by hand.
+**`eas update` does not read build profiles.** `eas build --profile preview` takes its
+environment from that profile's `env` block in `eas.json`; an update takes its environment from
+whatever `process.env` and `.env` the machine running it happens to have. They are different
+mechanisms that look like the same one.
+
+So a correctly configured build can be silently downgraded by the next update — and `.env` is
+gitignored, which is what makes it quiet: the file differs per machine by design and nobody
+reviews it. A stale project URL in it fails at DNS lookup, which reaches the app as
+`Network request failed`, is classified `NETWORK_UNAVAILABLE`, and is shown to a tester as
+_"We couldn't reach KyaScene"_ — a configuration mistake wearing a connectivity error's
+clothes, for a server that was answering fine throughout. It cost most of a day on 13 August.
+
+`pnpm run eas:update` therefore goes through `scripts/eas-update.mjs`, which resolves the build
+profile's `env` exactly as EAS merges it — `extends` chain included — and injects it into the
+update. Expo's dotenv loader does not overwrite variables that are already set, so `eas.json`
+wins over `.env` rather than fighting it. A disagreement is reported by name (never by value),
+because a `.env` that contradicts `eas.json` means somebody's mental model is wrong even when
+the outcome is now correct.
+
+It also sets `--message` to the last commit subject, so the update list in the Expo dashboard
+reads as a history. That used to be a string hard-coded in `package.json`, which meant every
+update after the first was labelled with the name of an unrelated old fix.
+
+### Did the phone actually take the update?
+
+Updates apply on **launch**, so a backgrounded app keeps running the bundle it started with —
+and an app that never fully closed can sit on a weeks-old bundle while you debug the symptoms
+of code you have already fixed. Force-close it (swipe up in the app switcher) and reopen.
+
+To confirm from the phone rather than assume: on an internal build, a failed sign-in shows a
+grey technical line under the error and a **Check the connection** button. If you do not see
+those, the phone is not running current code, and nothing you observe reflects the repository.
 
 ## When you need a new build instead
 
