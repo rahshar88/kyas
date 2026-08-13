@@ -78,6 +78,8 @@ CocoaPods, running on a real iPhone with a free Apple ID, and what to check once
 | `pnpm run test:rls`                       | migrations + row-isolation tests on PostgreSQL   |
 | `pnpm run test:functions`                 | Deno type-check for the Edge Functions           |
 | `pnpm run supabase:deploy <ref>`          | apply schema, seed and functions to a project    |
+| `pnpm run eas:build:preview`              | cloud-build a standalone app for your phone      |
+| `pnpm run eas:update`                     | push new JavaScript over the air, no cable       |
 | `pnpm run verify:eas`                     | `eas.json` structure and secret scan             |
 | `pnpm run assets:generate`                | regenerate placeholder icons                     |
 
@@ -164,7 +166,9 @@ need files hosted at `kyascene.app`; and Maestro execution.
 
 |                                                              |                                                     |
 | ------------------------------------------------------------ | --------------------------------------------------- |
+| [Build log](docs/product/build-log.md)                       | everything done so far, in order, with the fixes    |
 | [First run on a Mac](docs/runbooks/first-run-on-mac.md)      | Xcode, simulator, real iPhone, troubleshooting      |
+| [Device builds and OTA](docs/runbooks/device-builds.md)      | untethered install, updates without a cable         |
 | [Supabase setup](docs/runbooks/supabase-setup.md)            | connecting a project, keys, invite codes            |
 | [Master specification](docs/product/master-specification.md) | the source of truth                                 |
 | [Scope boundaries](docs/product/scope-boundaries.md)         | P0 non-goals, drift guardrail                       |

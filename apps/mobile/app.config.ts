@@ -33,6 +33,15 @@ const SCENE_EMERALD = '#032C24';
 /** Universal / app link host (§4.5). */
 const LINK_HOST = 'kyascene.app';
 
+/**
+ * EAS project id, written by `eas init`.
+ *
+ * Empty until an Expo account exists. While empty the app builds and runs exactly as before
+ * — over-the-air updates are simply not configured — so a fresh clone is never blocked on
+ * having an Expo account. See docs/runbooks/device-builds.md.
+ */
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const identity = IDENTITY[appEnv];
   const isReleaseLike = appEnv !== 'development';
@@ -127,11 +136,27 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
     ],
 
+    /**
+     * Over-the-air updates (§4.2 lists EAS Update in the baseline).
+     *
+     * The `fingerprint` runtime version is the important part: it hashes the native project,
+     * so a JavaScript-only change ships over the air, while a change touching native code
+     * requires a new build instead of silently shipping an update the installed binary
+     * cannot run.
+     */
+    ...(EAS_PROJECT_ID === ''
+      ? {}
+      : {
+          updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}` },
+          runtimeVersion: { policy: 'fingerprint' as const },
+        }),
+
     experiments: { typedRoutes: true },
 
     extra: {
       environment: appEnv,
       poweredBy: '1818',
+      ...(EAS_PROJECT_ID === '' ? {} : { eas: { projectId: EAS_PROJECT_ID } }),
     },
   };
 };

@@ -26,7 +26,9 @@
     "mobile:android": "pnpm --filter @kyascene/mobile android",
     "test:rls": "bash scripts/run-rls-tests.sh",
     "test:functions": "cd supabase/functions && deno task check",
-    "supabase:deploy": "bash scripts/supabase-deploy.sh"
+    "supabase:deploy": "bash scripts/supabase-deploy.sh",
+    "eas:build:preview": "cd apps/mobile && npx eas-cli@latest build --profile preview --platform ios",
+    "eas:update": "cd apps/mobile && npx eas-cli@latest update --branch preview"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
