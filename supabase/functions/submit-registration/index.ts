@@ -15,7 +15,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 import { CURRENT_POLICY_VERSION } from '../_shared/policy.ts';
-import { failure, requestId, success } from '../_shared/response.ts';
+import { failure, preflight, requestId, success } from '../_shared/response.ts';
 
 type SubmitOutcome = 'submitted' | 'already_submitted' | 'incomplete' | 'not_permitted';
 
@@ -26,6 +26,10 @@ interface SubmitResult {
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
+  // Browsers preflight any POST carrying Authorization. Must come before every other check.
+  const preflighted = preflight(request);
+  if (preflighted) return preflighted;
+
   const id = requestId();
 
   if (request.method !== 'POST') {

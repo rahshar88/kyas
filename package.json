@@ -35,7 +35,8 @@
     "admin:build": "pnpm --filter @kyascene/admin build",
     "verify:consent": "node scripts/verify-consent-version.mjs",
     "dev:code": "bash scripts/dev-signin-code.sh",
-    "dev:admin": "bash scripts/dev-make-admin.sh"
+    "dev:admin": "bash scripts/dev-make-admin.sh",
+    "verify:cors": "node scripts/verify-function-cors.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

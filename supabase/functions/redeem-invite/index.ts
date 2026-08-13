@@ -18,11 +18,15 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 import { hashInviteCode, isPlausibleInviteCode } from '../_shared/invite-code.ts';
-import { failure, requestId, success } from '../_shared/response.ts';
+import { failure, preflight, requestId, success } from '../_shared/response.ts';
 
 type RedeemOutcome = 'redeemed' | 'already_redeemed' | 'invite_invalid' | 'invite_exhausted';
 
 Deno.serve(async (request: Request): Promise<Response> => {
+  // Browsers preflight any POST carrying Authorization. Must come before every other check.
+  const preflighted = preflight(request);
+  if (preflighted) return preflighted;
+
   const id = requestId();
 
   if (request.method !== 'POST') {

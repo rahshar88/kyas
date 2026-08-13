@@ -14,7 +14,7 @@
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-import { failure, requestId, success } from '../_shared/response.ts';
+import { failure, preflight, requestId, success } from '../_shared/response.ts';
 
 type ReviewOutcome =
   'approved' | 'rejected' | 'not_permitted' | 'no_pending_request' | 'invalid_request';
@@ -35,6 +35,10 @@ function isRejectionCategory(value: unknown): value is RejectionCategory {
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
+  // Browsers preflight any POST carrying Authorization. Must come before every other check.
+  const preflighted = preflight(request);
+  if (preflighted) return preflighted;
+
   const id = requestId();
 
   if (request.method !== 'POST') {

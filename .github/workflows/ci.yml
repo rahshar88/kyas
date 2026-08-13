@@ -163,6 +163,11 @@ jobs:
         working-directory: supabase/functions
         run: deno task check
 
+      # The mobile app is not a browser and never sends a preflight, so a function missing
+      # CORS looks perfectly healthy until the first browser client calls it.
+      - name: Edge Functions answer the CORS preflight
+        run: node scripts/verify-function-cors.mjs
+
   # §15's private console is a browser bundle: anything inside it is public. This builds it
   # and proves it carries no credential beyond the publishable key.
   admin-console:
