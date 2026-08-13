@@ -43,6 +43,10 @@ fails CI if anything resembling it is committed.
 ## 3. Point the app at it
 
 ```bash
+cd ~/kyas
+```
+
+```bash
 open -e apps/mobile/.env
 ```
 
@@ -57,17 +61,31 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 ## 4. Apply the schema
 
-Once per machine:
+Every command below assumes you are in the repository. Run each on its own line — typing a
+path by itself makes zsh try to execute the folder:
+
+```bash
+cd ~/kyas
+```
+
+```bash
+git pull
+```
+
+Once per machine. This prints a verification code and opens your browser:
 
 ```bash
 npx supabase login
 ```
 
-Then:
+Then, substituting your own ref:
 
 ```bash
 pnpm run supabase:deploy your-ref
 ```
+
+It prompts for the **database password** set when the project was created — not your Supabase
+account password. Lost it? Dashboard → **Settings → Database → Reset database password**.
 
 The ref is the subdomain of your project URL — for `https://abcdefgh.supabase.co` it is
 `abcdefgh`. This applies the migrations, seeds the state and provider lists, and deploys the
