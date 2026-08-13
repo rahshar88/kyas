@@ -8,7 +8,7 @@ import {
   spacing,
   typography,
 } from '@kyascene/ui';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -40,6 +40,7 @@ import { SESSION_RESTORE_TIMEOUT_MS } from '../services/session';
  */
 export function LaunchScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { isRestoring, session, status } = useAuth();
 
   const [timedOut, setTimedOut] = useState(false);
@@ -74,6 +75,20 @@ export function LaunchScreen() {
 
   useEffect(() => {
     if (isRestoring || timedOut) return;
+
+    /**
+     * Only route from the launch screen when the launch screen is what the user is looking at.
+     *
+     * This component stays mounted as the stack's anchor, so its `replace` fires even when a
+     * deep link has already opened another route — and wins, because it runs after the link is
+     * applied. Opening `kyascene://verify-email` therefore launched the app and appeared to do
+     * nothing: the screen was reached and immediately replaced.
+     *
+     * §4.5 puts universal links on `kyascene.app` for beta, so this would have broken every
+     * one of them the moment they were switched on, in a way that looks like the link is
+     * wrong rather than the app.
+     */
+    if (pathname !== '/') return;
 
     let cancelled = false;
 
@@ -117,7 +132,7 @@ export function LaunchScreen() {
     return () => {
       cancelled = true;
     };
-  }, [attempt, hideSplash, isRestoring, router, session, status, timedOut]);
+  }, [attempt, hideSplash, isRestoring, pathname, router, session, status, timedOut]);
 
   return (
     <AppScreen backgroundColor={colors.sceneEmerald} testID="launch-screen">
