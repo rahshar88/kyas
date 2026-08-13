@@ -75,6 +75,31 @@ describe('S02 — Email sign-in', () => {
     },
   );
 
+  /**
+   * The escape hatch that does not depend on classifying a failure correctly. Someone holding
+   * a valid code must always be able to reach the screen that accepts one — a rate limit, a
+   * flaky connection or an error we mapped wrongly all stranded them otherwise.
+   */
+  it('reaches the code screen directly, without sending anything', async () => {
+    const view = await render(<SignInScreen />);
+    await fireEvent.changeText(view.getByTestId('sign-in-email'), 'asha@example.com');
+    await fireEvent.press(view.getByTestId('sign-in-have-code'));
+
+    expect(mockRequestCode).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/(public)/verify-email',
+      params: { email: 'asha@example.com', notSent: '1' },
+    });
+  });
+
+  it('will not take you to the code screen without a valid address', async () => {
+    const view = await render(<SignInScreen />);
+    await fireEvent.changeText(view.getByTestId('sign-in-email'), 'not-an-email');
+    await fireEvent.press(view.getByTestId('sign-in-have-code'));
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('refuses an address that is not one, without calling the server', async () => {
     await signInWith('not-an-email');
 

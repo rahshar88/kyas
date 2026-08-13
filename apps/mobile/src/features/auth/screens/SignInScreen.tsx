@@ -116,6 +116,29 @@ export function SignInScreen() {
           disabled={email.trim() === ''}
           testID="sign-in-submit"
         />
+        {/**
+         * §S02 has no route to S03 except a successful send, which makes any send failure a
+         * dead end for someone who already holds a code — and codes last an hour. Rate limits,
+         * a flaky connection, an error we mapped wrongly: all of them stranded a person whose
+         * code was sitting in front of them. This is the way through that does not depend on
+         * classifying the failure correctly.
+         */}
+        <TextButton
+          label="I already have a code"
+          onPress={() => {
+            const parsed = emailSchema.safeParse(email);
+            if (!parsed.success) {
+              setError(parsed.error.issues[0]?.message ?? 'Enter your email address first');
+              return;
+            }
+            router.push({
+              pathname: '/(public)/verify-email',
+              params: { email: parsed.data, notSent: '1' },
+            });
+          }}
+          testID="sign-in-have-code"
+        />
+
         <TextButton label="Back to start" onPress={() => router.back()} testID="sign-in-back" />
         <PoweredBy1818 />
       </View>

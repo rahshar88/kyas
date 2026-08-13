@@ -35,7 +35,18 @@ export function toAppError(error: unknown, fallback: AppErrorCode = 'UNKNOWN'): 
     return new AppError('SESSION_EXPIRED', { cause: error });
   }
 
-  if (status === 429 || /rate limit|too many requests/i.test(message)) {
+  /**
+   * Supabase names its rate limits in `code` — `over_email_send_rate_limit` and friends. Those
+   * were reaching the status/message checks below and, when supabase-js had retried and given
+   * up, surfacing as NETWORK_UNAVAILABLE: "we couldn't reach KyaScene", for a server that
+   * answered immediately and precisely. Matching the code first is both more accurate and more
+   * stable than matching prose.
+   */
+  if (
+    status === 429 ||
+    /rate.?limit/i.test(candidate.code ?? '') ||
+    /rate limit|too many requests/i.test(message)
+  ) {
     return new AppError('RATE_LIMITED', { cause: error });
   }
 
