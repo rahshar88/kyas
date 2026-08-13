@@ -118,6 +118,16 @@ It bundles the JavaScript, uploads it, and every installed copy on the `preview`
 it up. **Close the app fully and reopen it** — updates are fetched on launch, so a background
 app will not see them.
 
+Two things the command pins so it never stops to ask:
+
+- `--environment development`, matching what the `preview` build profile actually runs as
+  (`EXPO_PUBLIC_ENVIRONMENT=development`). It selects which EAS-hosted variables to use; this
+  project keeps its publishable values in `eas.json` and `.env` instead, so the choice changes
+  nothing — but an interactive prompt in the middle of a one-line command is its own problem.
+- `--message` set to the last commit subject, so the update list in the Expo dashboard reads
+  as a history rather than a column of blanks. Working out which update broke something is
+  otherwise a matter of matching timestamps by hand.
+
 ## When you need a new build instead
 
 Only when the native layer changes:
