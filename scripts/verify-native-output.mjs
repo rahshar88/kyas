@@ -32,7 +32,12 @@ if (!Object.hasOwn(IDENTIFIERS, environment)) {
 const bundleId = IDENTIFIERS[environment];
 const expectsUniversalLinks = environment !== 'development';
 
-/** §13.2 — no exact location, no contact book, no microphone in P0. */
+/**
+ * §13.2 data minimisation, asserted against the generated manifest rather than the config.
+ * Every one of these has been contributed by a dependency at some point — the location and
+ * contacts entries by expo-dev-client, RECORD_AUDIO and the storage pair by
+ * expo-image-picker — so this list is a record of what has actually tried to get in.
+ */
 const FORBIDDEN_PERMISSIONS = [
   'ACCESS_FINE_LOCATION',
   'ACCESS_COARSE_LOCATION',
@@ -106,13 +111,42 @@ if (existsSync(iosDir)) {
     'ios: declares no non-exempt encryption',
     plist?.includes('ITSAppUsesNonExemptEncryption') ?? false,
   );
-  // §13.2 / §18: no permission strings until the feature that needs them exists (S13, M2).
+  /**
+   * §S13 and §18. This assertion was inverted until Milestone 2: with no screen requesting a
+   * permission, a usage description was pure liability, so the check forbade them. S13 now
+   * asks for camera and photo access, which flips the requirement — a permission with a
+   * missing or default string is an App Store rejection and, worse, a system dialog that
+   * gives the user nothing to decide on.
+   */
+  for (const [key, subject] of [
+    ['NSCameraUsageDescription', 'camera'],
+    ['NSPhotoLibraryUsageDescription', 'photo library'],
+  ]) {
+    const value = new RegExp(`<key>${key}</key>\\s*<string>([^<]*)</string>`).exec(plist ?? '');
+
+    check(
+      `ios: explains why it wants the ${subject}`,
+      value !== null && (value[1] ?? '').trim().length > 30,
+      value === null ? 'no usage description at all' : `too short: "${value[1]}"`,
+    );
+    check(
+      `ios: the ${subject} explanation names KyaScene`,
+      (value?.[1] ?? '').includes('KyaScene'),
+      'a generic string tells the user nothing about who is asking',
+    );
+  }
+
+  /**
+   * expo-image-picker adds a microphone string by default because it can also capture video.
+   * S13 takes a still photograph, so this would be a permission — and a Data Safety
+   * declaration (§19) — for a capability the product does not have.
+   */
   check(
-    'ios: no unused camera/photo permission strings',
-    !(plist ?? '').includes('NSCameraUsageDescription') &&
-      !(plist ?? '').includes('NSPhotoLibraryUsageDescription'),
-    'a usage description was declared before any permission is requested',
+    'ios: requests no microphone access',
+    !(plist ?? '').includes('NSMicrophoneUsageDescription'),
+    'a dependency reintroduced it; disable it in the expo-image-picker plugin options',
   );
+
   check(
     'ios: declares no location usage',
     !(plist ?? '').includes('NSLocationWhenInUseUsageDescription') &&

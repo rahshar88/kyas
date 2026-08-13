@@ -1,4 +1,10 @@
-import { APP_ERROR_MESSAGES, isAppError, otpCodeSchema } from '@kyascene/domain';
+import {
+  APP_ERROR_MESSAGES,
+  OTP_MAX_LENGTH,
+  OTP_MIN_LENGTH,
+  isAppError,
+  otpCodeSchema,
+} from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -51,7 +57,7 @@ export function VerifyEmailScreen() {
     async (value: string) => {
       const parsed = otpCodeSchema.safeParse(value);
       if (!parsed.success) {
-        setError(parsed.error.issues[0]?.message ?? 'Enter the 6-digit code');
+        setError(parsed.error.issues[0]?.message ?? 'Enter the code from your email');
         return;
       }
       if (!email) {
@@ -84,13 +90,27 @@ export function VerifyEmailScreen() {
   );
 
   const onChange = (next: string) => {
-    const digits = next.replace(/[^0-9]/g, '').slice(0, 6);
+    const digits = next.replace(/[^0-9]/g, '').slice(0, OTP_MAX_LENGTH);
+    const grewByMoreThanOne = digits.length > code.length + 1;
+
     setCode(digits);
     if (error !== undefined) setError(undefined);
 
-    // Auto-submit once, so a paste completes without a further tap but a failed attempt is
-    // not retried in a loop.
-    if (digits.length === 6 && attempted.current !== digits && !submitting) {
+    /**
+     * Auto-submit on a paste or an autofill, never while typing.
+     *
+     * The previous rule fired at exactly six digits, which is wrong the moment a project
+     * issues a longer code: it would submit the first six of an eight-digit code and report
+     * it as invalid. Growing by more than one character in a single change means the value
+     * arrived whole — a paste, or iOS filling in the code from the notification — whereas
+     * typing adds one digit at a time and never triggers this.
+     */
+    if (
+      grewByMoreThanOne &&
+      digits.length >= OTP_MIN_LENGTH &&
+      attempted.current !== digits &&
+      !submitting
+    ) {
       attempted.current = digits;
       void submit(digits);
     }
@@ -114,19 +134,19 @@ export function VerifyEmailScreen() {
       <View style={styles.body}>
         <AppHeader
           title="Check your email"
-          subtitle={email ? `We sent a 6-digit code to ${email}.` : 'We sent you a 6-digit code.'}
+          subtitle={email ? `We sent a code to ${email}.` : 'We sent you a code.'}
           onBack={() => router.back()}
         />
 
         <TextField
-          label="6-digit code"
+          label="Code from your email"
           value={code}
           onChangeText={onChange}
           placeholder="123456"
           keyboardType="number-pad"
           autoComplete="one-time-code"
           textContentType="oneTimeCode"
-          maxLength={6}
+          maxLength={OTP_MAX_LENGTH}
           error={error}
           editable={!submitting}
           testID="verify-code"
@@ -145,7 +165,7 @@ export function VerifyEmailScreen() {
           label="Verify"
           onPress={() => void submit(code)}
           loading={submitting}
-          disabled={code.length !== 6}
+          disabled={code.length < OTP_MIN_LENGTH}
           testID="verify-submit"
         />
 

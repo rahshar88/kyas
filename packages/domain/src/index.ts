@@ -74,6 +74,8 @@ export {
   ineligibilityReason,
   inviteCodeSchema,
   isEligible,
+  OTP_MAX_LENGTH,
+  OTP_MIN_LENGTH,
   otpCodeSchema,
   studyDetailsSchema,
   sydneyLocationSchema,

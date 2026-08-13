@@ -208,9 +208,13 @@ jobs:
         run: pnpm audit --audit-level=high
 
       # Fails loudly if anyone drifts off the Expo SDK 57 pinned versions.
+      #
+      # `npx`, not `pnpm exec`: expo-doctor is no longer bundled with the Expo CLI, so it is
+      # not on the project's binary path and `pnpm exec` reports "command not found" — which
+      # reads like a broken workflow rather than a moved tool.
       - name: Expo SDK compatibility
         working-directory: apps/mobile
-        run: pnpm exec expo-doctor
+        run: npx --yes expo-doctor@latest
 
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2

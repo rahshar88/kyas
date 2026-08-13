@@ -173,10 +173,24 @@ export const emailSchema = z
   .pipe(z.email('Enter a valid email address'));
 
 /** §S03: "Six-digit code with paste support." */
+/**
+ * §S03's one-time code.
+ *
+ * Six to ten digits, not six. Supabase's OTP length is a per-project setting anywhere in that
+ * range, and hard-coding six meant a project configured for eight could never be signed into
+ * at all: the field truncated the code, the button stayed disabled, and nothing on screen
+ * explained why. A length the server controls is not a length the client may assume.
+ */
+export const OTP_MIN_LENGTH = 6;
+export const OTP_MAX_LENGTH = 10;
+
 export const otpCodeSchema = z
   .string()
   .trim()
-  .regex(/^[0-9]{6}$/, 'Enter the 6-digit code');
+  .regex(
+    new RegExp(`^[0-9]{${OTP_MIN_LENGTH},${OTP_MAX_LENGTH}}$`),
+    'Enter the code from your email',
+  );
 
 /** §S04. Matches the normalisation in the redeem-invite Edge Function. */
 export const inviteCodeSchema = z

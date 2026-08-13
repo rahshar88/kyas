@@ -3,6 +3,18 @@ const path = require('node:path');
 const workspaceRoot = path.resolve(__dirname, '../..');
 
 const shared = {
+  /**
+   * 15 seconds, not Jest's default 5.
+   *
+   * A React Native Testing Library render goes through the full jest-expo transform and the
+   * native mock layer; on a two-core CI runner the first test in a file can take longer than
+   * five seconds on its own. That failed CI on a screen test that passes locally in under a
+   * second — a slow machine, not a slow test.
+   *
+   * Still a real ceiling rather than a shrug: a genuine hang, or a promise that never settles,
+   * fails well inside 15s.
+   */
+  testTimeout: 15_000,
   // `setupFiles`, not `setupFilesAfterEnv`: env vars must exist before any module under
   // test imports src/config/env.ts, which validates at import time.
   setupFiles: ['<rootDir>/jest.setup.ts'],

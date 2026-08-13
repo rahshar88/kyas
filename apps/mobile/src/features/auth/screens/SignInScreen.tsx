@@ -65,7 +65,7 @@ export function SignInScreen() {
       <View style={styles.body}>
         <AppHeader
           title="What's your email?"
-          subtitle="We'll send you a 6-digit code. No password to remember."
+          subtitle="We'll email you a code. No password to remember."
           onBack={() => router.back()}
         />
 

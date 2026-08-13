@@ -60,7 +60,17 @@ describe('one-time code (§S03)', () => {
     expect(otpCodeSchema.parse(' 123456 ')).toBe('123456');
   });
 
-  it.each(['12345', '1234567', 'abcdef', ''])('rejects %p', (value) => {
+  /**
+   * Supabase's OTP length is a per-project setting between six and ten. This schema required
+   * exactly six until a project configured for eight made sign-in impossible: the field
+   * truncated the code, the button never enabled, and nothing said why. A length the server
+   * controls is not a length the client may assume.
+   */
+  it.each([6, 7, 8, 9, 10])('accepts a %i-digit code', (length) => {
+    expect(otpCodeSchema.safeParse('1'.repeat(length)).success).toBe(true);
+  });
+
+  it.each(['12345', '12345678901', 'abcdef', '12345a', ''])('rejects %p', (value) => {
     expect(otpCodeSchema.safeParse(value).success).toBe(false);
   });
 });

@@ -139,9 +139,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       associatedDomains: isReleaseLike ? [`applinks:${LINK_HOST}`] : [],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        // No camera or photo-library usage descriptions yet. The first permission request
-        // is S13 in Milestone 2; declaring unused permission strings invites App Store
-        // review questions we cannot answer (§18).
+        // Camera and photo-library strings arrive with S13, which is the first screen that
+        // asks for anything. They are set by the expo-image-picker plugin below rather than
+        // here, so the wording lives beside the decision to disable the microphone one.
       },
     },
 
@@ -180,6 +180,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
          * use. Blocked everywhere except development, where the dev menu needs it.
          */
         ...(isReleaseLike ? ['android.permission.SYSTEM_ALERT_WINDOW'] : []),
+        /**
+         * expo-image-picker contributes RECORD_AUDIO and the storage permissions because it
+         * can also capture video. S13 takes a still photograph and nothing else, so a
+         * microphone permission would be a Data Safety declaration (§19) for a capability the
+         * product does not have — and the kind of thing a tester notices and does not trust.
+         *
+         * Caught by CI reading the generated manifest, not by review: the permission arrived
+         * with a dependency, in a file nobody edited.
+         */
+        'android.permission.RECORD_AUDIO',
+        'android.permission.READ_EXTERNAL_STORAGE',
+        'android.permission.WRITE_EXTERNAL_STORAGE',
       ],
       intentFilters: isReleaseLike
         ? [
@@ -196,6 +208,24 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       'expo-secure-store',
+      /**
+       * §S13 and §18: a permission prompt has to say why, in the user's terms, before the
+       * system dialog appears. These strings are what iOS shows, so they are product copy —
+       * §7.6's calm and specific tone applies to them as much as to a screen.
+       *
+       * `microphonePermission: false` removes NSMicrophoneUsageDescription entirely. The
+       * plugin adds it by default for video capture, which S13 does not do.
+       */
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'KyaScene uses your photos so you can choose a profile picture. Nothing is uploaded until you tap continue.',
+          cameraPermission:
+            'KyaScene uses your camera so you can take a profile picture. Nothing is uploaded until you tap continue.',
+          microphonePermission: false,
+        },
+      ],
       [
         'expo-splash-screen',
         {
