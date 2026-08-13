@@ -1,3 +1,4 @@
+import { REGISTRATION_STEP_COUNT, displayNameSchema, stepNumber } from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -5,6 +6,7 @@ import {
   SecondaryButton,
   StepProgress,
   TextButton,
+  TextField,
   spacing,
   typography,
   useTheme,
@@ -18,25 +20,38 @@ import { avatarService } from '@/features/registration/services/avatar';
 import { analytics } from '@/services/analytics';
 
 /**
- * S13 — Profile photograph.
+ * S13 — Your name and photo.
  *
- * §S13: "Add recognition and trust while remaining optional in P0."
+ * §S13: "Add recognition and trust while remaining optional in P0." That is about the
+ * photograph, and it still holds: Skip is a real button of equal weight, present before any
+ * permission is requested and still present after a denial — §S13's acceptance is that
+ * "permission denial returns to a usable screen with instructions and skip option", which is
+ * a screen that has to work in the failure case, not a message.
  *
- * Optional is load-bearing here, not a caveat. Skip is a real button of equal weight, it is
- * present before any permission is requested, and it is still present after a denial —
- * §S13's acceptance is that "permission denial returns to a usable screen with instructions
- * and skip option", which is a screen that has to work in the failure case, not a message.
+ * The **name is required**, and is the reason this screen changed.
  *
- * This step is deliberately absent from `REGISTRATION_STEPS`: a step that can be skipped
- * cannot be used to decide "where did they get to", because skipped and never-reached would
- * be indistinguishable and the resume would loop here forever.
+ * No screen in §S02–§S17 ever asked for one. `profiles.display_name` existed from Milestone 1
+ * because the review console lists people and §15.2 lets a moderator clear a name — both of
+ * which presuppose one — but nothing ever set it. Every applicant reached the queue as "No
+ * name", and §S18's beta home would have greeted nobody. Found by looking at a real review
+ * queue; no test could have noticed, because nothing was broken.
+ *
+ * A name and a face are the same question — how do you appear to other students — so it
+ * belongs here rather than on a screen of its own.
+ *
+ * It is also what lets S13 join `REGISTRATION_STEPS`. It could not before: the photo is
+ * optional, so "skipped" and "never reached" were indistinguishable and resume would have
+ * looped here forever. "Has a name" is unambiguous, and skipping the photo still completes
+ * the step.
  */
 export function ProfilePhotoScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { draft, patch, isLoading } = useDraft();
+  const { draft, saveStep, isLoading } = useDraft();
 
   const [uri, setUri] = useState<string | undefined>();
+  const [name, setName] = useState('');
+  const [nameError, setNameError] = useState<string | undefined>();
   const [denied, setDenied] = useState<'camera' | 'library' | undefined>();
   const [busy, setBusy] = useState(false);
 
@@ -48,6 +63,7 @@ export function ProfilePhotoScreen() {
   if (!hydrated && draft !== null) {
     setHydrated(true);
     if (draft.photo?.localUri) setUri(draft.photo.localUri);
+    if (draft.displayName !== undefined) setName(draft.displayName);
   }
 
   const choose = async (source: 'camera' | 'library') => {
@@ -74,7 +90,13 @@ export function ProfilePhotoScreen() {
    * though something went wrong.
    */
   const advance = async (photoUri: string | undefined) => {
-    await patch({ photo: { localUri: photoUri } });
+    const parsed = displayNameSchema.safeParse(name);
+    if (!parsed.success) {
+      setNameError(parsed.error.issues[0]?.message ?? 'Enter a name');
+      return;
+    }
+
+    await saveStep('photo', { displayName: parsed.data, photo: { localUri: photoUri } });
     analytics.track('onboarding_step_completed', { screen: 'S13' });
     router.push('/privacy');
   };
@@ -82,13 +104,27 @@ export function ProfilePhotoScreen() {
   return (
     <AppScreen scrollable testID="photo-screen">
       <View style={styles.body}>
-        <StepProgress current={8} total={10} />
+        <StepProgress current={stepNumber('photo')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
-          eyebrow="Optional"
-          title="Add a photo?"
-          subtitle="It helps people recognise you. You can add one later instead."
+          title="What should we call you?"
+          subtitle="This is the name other students will see. A photo is optional."
           onBack={() => router.back()}
+        />
+
+        <TextField
+          label="Your name"
+          value={name}
+          onChangeText={(next) => {
+            setName(next);
+            if (nameError !== undefined) setNameError(undefined);
+          }}
+          placeholder="Asha"
+          autoCapitalize="words"
+          autoComplete="name"
+          maxLength={60}
+          error={nameError}
+          testID="photo-name"
         />
 
         <View style={styles.preview}>
@@ -167,6 +203,7 @@ export function ProfilePhotoScreen() {
       <View style={styles.actions}>
         <PrimaryButton
           label={uri === undefined ? 'Continue without a photo' : 'Use this photo'}
+          disabled={name.trim() === ''}
           onPress={() => void advance(uri)}
           loading={isLoading}
           testID="photo-continue"

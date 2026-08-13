@@ -1,6 +1,8 @@
 import {
-  isEligible,
+  REGISTRATION_STEP_COUNT,
   ineligibilityReason,
+  isEligible,
+  stepNumber,
   type EligibilityAnswers,
   type IneligibilityReason,
 } from '@kyascene/domain';
@@ -145,7 +147,11 @@ export function EligibilityScreen() {
   return (
     <AppScreen scrollable testID="eligibility-screen">
       <View style={styles.body}>
-        <StepProgress current={1} total={4} testID="eligibility-progress" />
+        <StepProgress
+          current={stepNumber('eligibility')}
+          total={REGISTRATION_STEP_COUNT}
+          testID="eligibility-progress"
+        />
 
         <AppHeader
           eyebrow="Step 1 of 4"

@@ -140,6 +140,7 @@ export function ReviewScreen() {
        * steps as unfinished while the review screen displayed them filled in directly above
        * the error. Registration could not be submitted by anyone.
        */
+      if (draft.displayName) await profileRepository.saveDisplayName(userId, draft.displayName);
       if (draft.study) await registrationRepository.saveStudyDetails(userId, draft.study);
       if (draft.sydneyLocation) {
         await registrationRepository.saveSydneyLocation(userId, draft.sydneyLocation);
@@ -220,6 +221,13 @@ export function ReviewScreen() {
             ))}
           </View>
         )}
+
+        <ProfileSummaryCard
+          title="You"
+          onEdit={() => router.push('/photo')}
+          items={[{ label: 'Name', value: draft.displayName }]}
+          testID="review-name"
+        />
 
         <ProfileSummaryCard
           title="Study"
@@ -340,6 +348,7 @@ export function ReviewScreen() {
 /** Wording for the codes `submit_registration` returns, so a server list reads as English. */
 const MISSING_LABELS: Record<MissingStep, string> = {
   eligibility: 'Eligibility questions',
+  name: 'Your name',
   study: 'Study details',
   location: 'Where you live in Sydney',
   india_background: 'Where in India you are from',

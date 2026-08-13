@@ -1,7 +1,9 @@
 import {
   LANGUAGE_PROFICIENCIES,
   LANGUAGE_PROFICIENCY_LABELS,
+  REGISTRATION_STEP_COUNT,
   languagesSchema,
+  stepNumber,
   type LanguageChoice,
   type LanguageProficiency,
 } from '@kyascene/domain';
@@ -106,7 +108,7 @@ export function LanguagesScreen() {
   return (
     <AppScreen scrollable testID="languages-screen">
       <View style={styles.body}>
-        <StepProgress current={5} total={10} />
+        <StepProgress current={stepNumber('languages')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 5 of 10"

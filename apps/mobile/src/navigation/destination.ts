@@ -37,6 +37,7 @@ export const REGISTRATION_ROUTES = {
   communities: '/communities',
   interests: '/interests',
   goals: '/goals',
+  photo: '/photo',
   privacy: '/privacy',
   consent: '/consent',
   review: '/review',

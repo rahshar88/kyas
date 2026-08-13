@@ -7,11 +7,13 @@ export {
 export {
   REGISTRATION_DRAFT_VERSION,
   REGISTRATION_STEPS,
+  REGISTRATION_STEP_COUNT,
   draftProgress,
   emptyDraft,
   isDraftComplete,
   isDraftUsable,
   nextIncompleteStep,
+  stepNumber,
   type RegistrationDraft,
   type RegistrationStep,
 } from './draft';
@@ -40,6 +42,7 @@ export {
   VISIBILITY_ASSURANCE,
   VISIBILITY_LABELS,
   communitiesSchema,
+  displayNameSchema,
   goalsSchema,
   interestsSchema,
   isMissingStep,

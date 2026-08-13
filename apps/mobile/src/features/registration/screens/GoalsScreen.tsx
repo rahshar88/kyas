@@ -1,4 +1,4 @@
-import { MAXIMUM_GOALS, goalsSchema } from '@kyascene/domain';
+import { MAXIMUM_GOALS, REGISTRATION_STEP_COUNT, goalsSchema, stepNumber } from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -88,7 +88,7 @@ export function GoalsScreen() {
   return (
     <AppScreen scrollable testID="goals-screen">
       <View style={styles.body}>
-        <StepProgress current={8} total={10} />
+        <StepProgress current={stepNumber('goals')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 8 of 10"

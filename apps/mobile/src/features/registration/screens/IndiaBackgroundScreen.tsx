@@ -1,4 +1,4 @@
-import { indiaBackgroundSchema } from '@kyascene/domain';
+import { REGISTRATION_STEP_COUNT, indiaBackgroundSchema, stepNumber } from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -95,7 +95,7 @@ export function IndiaBackgroundScreen() {
   return (
     <AppScreen scrollable testID="background-screen">
       <View style={styles.body}>
-        <StepProgress current={4} total={4} />
+        <StepProgress current={stepNumber('india-background')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 4 of 4"

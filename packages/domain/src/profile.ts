@@ -203,8 +203,32 @@ export const REJECTION_CATEGORY_MESSAGES: Record<RejectionCategory, string> = {
  * rather than sentences for exactly this reason (§14.3 also forbids free text reaching
  * analytics).
  */
+/**
+ * S13 — what to call someone.
+ *
+ * The specification never asks for a name. `profiles.display_name` was created in Milestone 1
+ * because the console lists people and §15.2 lets a moderator clear a name — both of which
+ * assume one exists — but no screen between S02 and S17 ever collected it. Every applicant
+ * reached the review queue as "No name", and §S18's beta home would have had nobody to greet.
+ *
+ * 1 to 60 characters, matching the `display_name_length` constraint exactly rather than
+ * approximately: a rule the form is stricter about than the table produces a rejection the
+ * student cannot see the cause of.
+ *
+ * Deliberately not validated beyond length. Names do not follow rules — not two words, not
+ * alphabetic, not Latin script, not a minimum length — and every pattern that has ever been
+ * used to "check" one has locked out somebody real. Moderation handles abuse (§13.3); a regex
+ * would only mean the wrong people cannot register.
+ */
+export const displayNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter the name you would like to be known by')
+  .max(60, 'That name is longer than 60 characters');
+
 export const MISSING_STEP_ROUTES = {
   eligibility: '/eligibility',
+  name: '/photo',
   study: '/study',
   location: '/sydney-location',
   india_background: '/india-background',

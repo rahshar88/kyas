@@ -24,11 +24,11 @@ import type {
  * a student's registration. On a version mismatch the draft is discarded and the student
  * restarts — annoying, but honest, and far better than submitting mangled answers.
  *
- * **2** since Milestone 2 added S09–S15. Anyone holding a Milestone 1 draft loses the first
- * four steps and re-enters them; that is a couple of minutes with a visible reason, against
- * the alternative of submitting half-migrated answers under a real person's name.
+ * **3** since S13 began collecting a name. Anyone holding an older draft re-enters it; that is
+ * a couple of minutes with a visible reason, against the alternative of submitting
+ * half-migrated answers under a real person's name.
  */
-export const REGISTRATION_DRAFT_VERSION = 2;
+export const REGISTRATION_DRAFT_VERSION = 3;
 
 /**
  * The registration steps in order (§8.1), S05 through S15.
@@ -36,9 +36,13 @@ export const REGISTRATION_DRAFT_VERSION = 2;
  * Order is load-bearing: `nextIncompleteStep` resumes the first unfinished one, so this array
  * is the single definition of "what comes next" for both the flow and §10.2's resume.
  *
- * S13 (photograph) is absent on purpose. §S13 makes it optional and requires that skipping
- * remains a first-class outcome; including it here would make an unfinished photograph block
- * resume forever, since "skipped" and "not reached" would be indistinguishable.
+ * S13 was absent from this list while it collected only a photograph. §S13 makes the photo
+ * optional and requires skipping to stay a first-class outcome, so an unfinished S13 could not
+ * be told apart from an unreached one and would have blocked resume forever.
+ *
+ * It belongs here now that the same screen also asks for a name, which is required. "Has a
+ * name" is an unambiguous completion signal in a way "has decided about a photo" never was —
+ * the photo remains genuinely optional, and skipping it still completes the step.
  */
 export const REGISTRATION_STEPS = [
   'eligibility',
@@ -49,6 +53,7 @@ export const REGISTRATION_STEPS = [
   'communities',
   'interests',
   'goals',
+  'photo',
   'privacy',
   'consent',
 ] as const;
@@ -59,6 +64,8 @@ export interface RegistrationDraft {
   version: number;
   /** Which steps the student has completed, so §10.2 can resume the last valid one. */
   completed: RegistrationStep[];
+  /** §S13. Required to submit — see `displayNameSchema` for why it is barely validated. */
+  displayName?: string;
   eligibility?: EligibilityAnswers;
   study?: StudyDetails;
   sydneyLocation?: SydneyLocation;
@@ -114,3 +121,17 @@ export function isDraftUsable(value: unknown): value is RegistrationDraft {
 export function draftProgress(draft: RegistrationDraft): { completed: number; total: number } {
   return { completed: draft.completed.length, total: REGISTRATION_STEPS.length };
 }
+
+/**
+ * Where a step sits in the flow, for the "step N of M" indicator.
+ *
+ * Derived rather than written on each screen. Hand-numbered progress had already drifted:
+ * the four Milestone 1 screens still said "of 4" after Milestone 2 made the flow ten steps
+ * long, and S13 and the goals screen both claimed to be step 8 — because S13 was not counted
+ * as a step at all. A student saw the total change halfway through, then a number repeat.
+ */
+export function stepNumber(step: RegistrationStep): number {
+  return REGISTRATION_STEPS.indexOf(step) + 1;
+}
+
+export const REGISTRATION_STEP_COUNT = REGISTRATION_STEPS.length;

@@ -400,6 +400,41 @@ begin
   insert into public.consents (user_id, policy_type, version, accepted) values
     ('aaaaaaaa-0000-0000-0000-000000000001', 'marketing', '2026-08-01', false);
 
+  /**
+   * §S13 — a registration must carry a name.
+   *
+   * No screen collected one until S13 was changed, so `display_name` was null for every
+   * applicant and the review queue listed them all as "No name". The client now requires it,
+   * but a rule only the client enforces is not a rule: an older build, a replayed request or
+   * a direct API call all reach this function instead. Asserted with everything else already
+   * complete, so nothing but the name can be the cause.
+   */
+  update public.profiles set display_name = null
+   where user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
+  result := public.submit_registration(
+    'aaaaaaaa-0000-0000-0000-000000000001', '2026-08-01'
+  );
+  perform pg_temp.assert(
+    result.outcome = 'incomplete' and 'name' = any (result.missing),
+    'a registration with no name is incomplete, and says which step is missing'
+  );
+
+  -- Whitespace is not a name. The column's length constraint counts it as a character.
+  update public.profiles set display_name = '   '
+   where user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
+  result := public.submit_registration(
+    'aaaaaaaa-0000-0000-0000-000000000001', '2026-08-01'
+  );
+  perform pg_temp.assert(
+    result.outcome = 'incomplete' and 'name' = any (result.missing),
+    'a name of only spaces does not count as one'
+  );
+
+  update public.profiles set display_name = 'Asha'
+   where user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
   result := public.submit_registration(
     'aaaaaaaa-0000-0000-0000-000000000001', '2026-08-01'
   );

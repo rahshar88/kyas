@@ -50,6 +50,7 @@ export interface ProfileRepository {
   listCommunities(): Promise<CatalogueEntry[]>;
   listInterests(): Promise<CatalogueEntry[]>;
   listGoals(): Promise<CatalogueEntry[]>;
+  saveDisplayName(userId: string, displayName: string): Promise<void>;
   saveLanguages(userId: string, choices: LanguageChoice[]): Promise<void>;
   saveCommunities(userId: string, selection: CommunitySelection): Promise<void>;
   saveInterests(userId: string, codes: string[]): Promise<void>;
@@ -113,6 +114,24 @@ export const profileRepository: ProfileRepository = {
 
   async listGoals(): Promise<CatalogueEntry[]> {
     return readCatalogue('goals');
+  },
+
+  /**
+   * §S13. The one profile column a student may write about how they appear to others.
+   *
+   * `status` sits on the same row and is server-controlled, so this is an `update` of a
+   * single named column rather than an upsert — the privileged-column guard would refuse
+   * anything wider, and being refused by a trigger is a worse way to learn that than not
+   * writing it in the first place.
+   */
+  async saveDisplayName(userId: string, displayName: string): Promise<void> {
+    await guard(async () => {
+      const { error } = await getSupabase()
+        .from('profiles')
+        .update({ display_name: displayName })
+        .eq('user_id', userId);
+      if (error) throw error;
+    });
   },
 
   async saveLanguages(userId: string, choices: LanguageChoice[]): Promise<void> {

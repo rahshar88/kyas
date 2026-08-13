@@ -1,6 +1,8 @@
 import {
   ARRIVAL_STATUSES,
   ARRIVAL_STATUS_LABELS,
+  REGISTRATION_STEP_COUNT,
+  stepNumber,
   sydneyLocationSchema,
   type ArrivalStatus,
 } from '@kyascene/domain';
@@ -92,7 +94,7 @@ export function SydneyLocationScreen() {
   return (
     <AppScreen scrollable testID="location-screen">
       <View style={styles.body}>
-        <StepProgress current={3} total={4} />
+        <StepProgress current={stepNumber('sydney-location')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 3 of 4"

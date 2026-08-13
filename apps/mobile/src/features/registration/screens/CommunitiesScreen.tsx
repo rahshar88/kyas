@@ -1,4 +1,4 @@
-import { communitiesSchema } from '@kyascene/domain';
+import { REGISTRATION_STEP_COUNT, communitiesSchema, stepNumber } from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -93,7 +93,7 @@ export function CommunitiesScreen() {
   return (
     <AppScreen scrollable testID="communities-screen">
       <View style={styles.body}>
-        <StepProgress current={6} total={10} />
+        <StepProgress current={stepNumber('communities')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 6 of 10"

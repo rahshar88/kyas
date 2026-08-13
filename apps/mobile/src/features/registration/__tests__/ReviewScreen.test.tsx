@@ -8,6 +8,7 @@ import { ReviewScreen } from '../screens/ReviewScreen';
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
 
+const mockSaveDisplayName = jest.fn().mockResolvedValue(undefined);
 const mockSaveStudyDetails = jest.fn().mockResolvedValue(undefined);
 const mockSaveSydneyLocation = jest.fn().mockResolvedValue(undefined);
 const mockSaveIndiaBackground = jest.fn().mockResolvedValue(undefined);
@@ -19,6 +20,7 @@ const mockSubmit = jest.fn().mockResolvedValue({ outcome: 'submitted' });
 // mock variables allows only that prefix.
 const mockDraft: RegistrationDraft = {
   ...emptyDraft('2026-08-13T00:00:00.000Z'),
+  displayName: 'Asha',
   study: {
     provider: 'usyd',
     course: 'Masters in AI',
@@ -64,6 +66,7 @@ jest.mock('@/repositories/registration-repository', () => ({
 
 jest.mock('@/repositories/profile-repository', () => ({
   profileRepository: {
+    saveDisplayName: (...args: unknown[]) => mockSaveDisplayName(...args),
     saveLanguages: (...args: unknown[]) => mockSaveLanguages(...args),
     saveCommunities: jest.fn().mockResolvedValue(undefined),
     saveInterests: (...args: unknown[]) => mockSaveInterests(...args),
@@ -88,6 +91,7 @@ describe('S16 — Review profile', () => {
     for (const fn of [
       mockReplace,
       mockPush,
+      mockSaveDisplayName,
       mockSaveStudyDetails,
       mockSaveSydneyLocation,
       mockSaveIndiaBackground,
@@ -114,6 +118,7 @@ describe('S16 — Review profile', () => {
     await fireEvent.press(view.getByTestId('review-submit'));
 
     await waitFor(() => {
+      expect(mockSaveDisplayName).toHaveBeenCalledWith('user-1', 'Asha');
       expect(mockSaveStudyDetails).toHaveBeenCalledWith('user-1', mockDraft.study);
       expect(mockSaveSydneyLocation).toHaveBeenCalledWith('user-1', mockDraft.sydneyLocation);
       expect(mockSaveIndiaBackground).toHaveBeenCalledWith('user-1', mockDraft.indiaBackground);
@@ -137,6 +142,7 @@ describe('S16 — Review profile', () => {
     const view = await renderWithProviders(<ReviewScreen />);
 
     expect(await view.findByText('University of Sydney')).toBeTruthy();
+    expect(view.getByText('Asha')).toBeTruthy();
     expect(view.getByText('Punjab')).toBeTruthy();
     expect(view.getByText('Meet people')).toBeTruthy();
     expect(view.getByText('Cricket, Movies, Startups')).toBeTruthy();

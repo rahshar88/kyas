@@ -1,7 +1,9 @@
 import {
   PROVIDER_NOT_LISTED,
+  REGISTRATION_STEP_COUNT,
   STUDY_LEVELS,
   STUDY_LEVEL_LABELS,
+  stepNumber,
   studyDetailsSchema,
   type StudyLevel,
 } from '@kyascene/domain';
@@ -159,7 +161,7 @@ export function StudyDetailsScreen() {
   return (
     <AppScreen scrollable testID="study-screen">
       <View style={styles.body}>
-        <StepProgress current={2} total={4} />
+        <StepProgress current={stepNumber('study')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 2 of 4"

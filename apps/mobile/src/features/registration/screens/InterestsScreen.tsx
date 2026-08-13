@@ -1,4 +1,9 @@
-import { MINIMUM_INTERESTS, interestsSchema } from '@kyascene/domain';
+import {
+  MINIMUM_INTERESTS,
+  REGISTRATION_STEP_COUNT,
+  interestsSchema,
+  stepNumber,
+} from '@kyascene/domain';
 import {
   AppHeader,
   AppScreen,
@@ -68,7 +73,7 @@ export function InterestsScreen() {
   return (
     <AppScreen scrollable testID="interests-screen">
       <View style={styles.body}>
-        <StepProgress current={7} total={10} />
+        <StepProgress current={stepNumber('interests')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 7 of 10"

@@ -1,7 +1,9 @@
 import {
   DEFAULT_VISIBILITY,
+  REGISTRATION_STEP_COUNT,
   VISIBILITY_ASSURANCE,
   VISIBILITY_LABELS,
+  stepNumber,
   visibilitySchema,
   type VisibilityPreferences,
 } from '@kyascene/domain';
@@ -73,7 +75,7 @@ export function PrivacyPreferencesScreen() {
   return (
     <AppScreen scrollable testID="privacy-screen">
       <View style={styles.body}>
-        <StepProgress current={9} total={10} />
+        <StepProgress current={stepNumber('privacy')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 9 of 10"

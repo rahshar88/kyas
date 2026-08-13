@@ -2,8 +2,10 @@ import {
   CONSENT_LABELS,
   CURRENT_POLICY_VERSION,
   OPTIONAL_CONSENTS,
+  REGISTRATION_STEP_COUNT,
   REQUIRED_CONSENTS,
   hasAllRequiredConsents,
+  stepNumber,
   type ConsentChoice,
   type ConsentPolicyType,
 } from '@kyascene/domain';
@@ -91,7 +93,7 @@ export function ConsentScreen() {
   return (
     <AppScreen scrollable testID="consent-screen">
       <View style={styles.body}>
-        <StepProgress current={10} total={10} />
+        <StepProgress current={stepNumber('consent')} total={REGISTRATION_STEP_COUNT} />
 
         <AppHeader
           eyebrow="Step 10 of 10"
