@@ -159,19 +159,37 @@ curl -s -X POST "https://YOUR-REF.supabase.co/auth/v1/otp" -H "apikey: YOUR-PUBL
 `{"error_code":"over_email_send_rate_limit"}` means the limit, not a broken configuration.
 
 _Cause 2 — the template sends a link, not a code._ This one is easy to miss because nothing
-errors. Supabase's stock **Magic Link** template contains only `{{ .ConfirmationURL }}`, so the
-email arrives with a button and no digits — while the app is asking for six of them (§S03).
-Fix it in **Authentication → Email Templates → Magic Link**:
+errors. Supabase's stock templates contain only `{{ .ConfirmationURL }}`, so the email arrives
+with a "Confirm your email" button and no digits — while the app is asking for six of them
+(§S03). Clicking the button goes to `http://localhost:3000`, the default Site URL, which is a
+dead end on a phone.
+
+**Two templates must both be edited**, and this is the part that catches people out — which one
+Supabase sends depends on whether the address is already registered:
+
+| Template           | Sent when                                              |
+| ------------------ | ------------------------------------------------------ |
+| **Confirm signup** | The address is new — a first-time tester               |
+| **Magic Link**     | The address already exists — everyone signing in again |
+
+Editing only one leaves half your testers stuck, and it will be whichever half you did not test
+with. Under **Authentication → Email Templates**, set the body of **both** to:
 
 ```html
 <h2>Your KyaScene code</h2>
 <p>Enter this code in the app:</p>
 <p style="font-size:28px;letter-spacing:4px"><strong>{{ .Token }}</strong></p>
-<p>It expires in an hour. If you didn't ask for it, ignore this email.</p>
+<p>If you didn't ask for this, ignore this email.</p>
 ```
 
-`{{ .Token }}` is the six-digit code. Without it in the template, no code will ever arrive no
-matter how long you wait.
+`{{ .Token }}` is the six-digit code. Without it, no code will ever arrive no matter how long
+you wait. Note there is no link in that body at all — the app is the only way in, so a link is
+a phishing surface with no purpose (§4.7: no consumer web application).
+
+While you are there, set **Authentication → URL Configuration → Site URL** to
+`https://kyascene.app`. Nothing in the code-based flow uses it, but leaving it as
+`http://localhost:3000` means any Supabase email that does contain a link points somewhere
+broken.
 
 **The real fix, needed before any tester exists.** Configure a custom SMTP provider under
 **Authentication → Emails → SMTP Settings**. §20 expects the funnel to work in beta, and the

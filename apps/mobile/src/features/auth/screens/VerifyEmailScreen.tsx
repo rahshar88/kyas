@@ -133,7 +133,10 @@ export function VerifyEmailScreen() {
         />
 
         <Text style={[typography.caption, { color: theme.textSecondary }]}>
-          The code expires after a few minutes. Check your spam folder if it hasn&apos;t arrived.
+          {/* Deliberately no duration. Supabase's code lifetime is a server setting, and
+              promising "a few minutes" made a still-valid code look expired — a tester who
+              believes that requests another one and hits the send rate limit instead. */}
+          Use the most recent code you were sent. Check your spam folder if it hasn&apos;t arrived.
         </Text>
       </View>
 
