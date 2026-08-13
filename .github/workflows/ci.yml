@@ -45,6 +45,13 @@ jobs:
       - name: Consent policy version is consistent across app, function and SQL
         run: node scripts/verify-consent-version.mjs
 
+      # §18: "App privacy answers match real SDK and data behaviour", and §16.4 makes a
+      # mismatch a release blocker. Both are stated as things a person should check, and the
+      # moment they stop being true is a migration adding one column — an ordinary change that
+      # nothing otherwise connects to a form filled in months earlier in App Store Connect.
+      - name: Privacy disclosure still describes the database
+        run: node scripts/verify-privacy-disclosure.mjs
+
       - name: eas.json structure and secret scan
         run: node scripts/verify-eas-config.mjs
 
