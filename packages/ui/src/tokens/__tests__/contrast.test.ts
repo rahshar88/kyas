@@ -33,7 +33,29 @@ function textPairsFor(scheme: ColorScheme): Pair[] {
       foreground: t.textPrimary,
       background: t.backgroundElevated,
     },
+    /**
+     * Every text role against *both* surfaces. Checking only `background` was the gap that
+     * let accent-coloured text ship at 2.31:1 in light mode: cards are drawn on
+     * `backgroundElevated`, which nothing tested, and in the light scheme that is white —
+     * a brighter surface than the background, so it is the harder of the two.
+     */
+    { name: 'accentText on background', foreground: t.accentText, background: t.background },
+    {
+      name: 'accentText on backgroundElevated',
+      foreground: t.accentText,
+      background: t.backgroundElevated,
+    },
     { name: 'positiveText on background', foreground: t.positiveText, background: t.background },
+    {
+      name: 'positiveText on backgroundElevated',
+      foreground: t.positiveText,
+      background: t.backgroundElevated,
+    },
+    {
+      name: 'textSecondary on backgroundElevated',
+      foreground: t.textSecondary,
+      background: t.backgroundElevated,
+    },
     { name: 'dangerText on background', foreground: t.dangerText, background: t.background },
     { name: 'cautionText on background', foreground: t.cautionText, background: t.background },
     // Labels sitting on a filled control — the PrimaryButton and status badges.
@@ -68,6 +90,26 @@ describe('design tokens meet the §7.5 accessibility floor', () => {
    * dangerText back to colors.error, this test explains why that is wrong before the
    * change reaches a tester.
    */
+  /**
+   * The reason `accentText` exists at all.
+   *
+   * Scene Saffron is a *fill*: Night on Saffron is 7.35:1 and that is how PrimaryButton uses
+   * it. As text it measures 5.79:1 on Scene Emerald — fine — and **2.31:1 on Warm Cream**,
+   * which fails AA and fails even the 3:1 large-text floor. The palette said so in a comment
+   * from Milestone 0; eight call sites used `theme.accent` as a text colour anyway, and no
+   * test contradicted them because the only accent pair asserted was the fill.
+   *
+   * Nothing showed it for months because dark mode passes. It took a screenshot of a phone in
+   * light mode.
+   */
+  it('does not let accent be used as text where it would fail', () => {
+    const light = semanticColors.light;
+
+    expect(contrastRatio(light.accent, light.background)).toBeLessThan(AA_NORMAL_TEXT);
+    expect(contrastRatio(light.accent, light.backgroundElevated)).toBeLessThan(AA_NORMAL_TEXT);
+    expect(light.accentText).not.toBe(light.accent);
+  });
+
   it('keeps status text distinct from status fills on the dark surface', () => {
     const dark = semanticColors.dark;
     expect(contrastRatio(dark.dangerFill, dark.background)).toBeLessThan(AA_NORMAL_TEXT);

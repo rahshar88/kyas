@@ -101,7 +101,7 @@ export function FeedbackScreen() {
           <View style={[styles.referenceCard, { backgroundColor: theme.backgroundElevated }]}>
             <Text style={[typography.label, { color: theme.textSecondary }]}>Your reference</Text>
             <Text
-              style={[typography.display, { color: theme.accent }]}
+              style={[typography.display, { color: theme.accentText }]}
               accessibilityLabel={`Your reference is ${reference.split('').join(' ')}`}
               testID="feedback-reference"
             >

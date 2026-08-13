@@ -32,7 +32,9 @@ export function AppHeader({ title, eyebrow, subtitle, onBack, testID }: AppHeade
       )}
 
       {eyebrow === undefined ? null : (
-        <Text style={[typography.caption, styles.eyebrow, { color: theme.accent }]}>{eyebrow}</Text>
+        <Text style={[typography.caption, styles.eyebrow, { color: theme.accentText }]}>
+          {eyebrow}
+        </Text>
       )}
 
       <Text accessibilityRole="header" style={[typography.title, { color: theme.textPrimary }]}>

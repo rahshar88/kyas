@@ -58,7 +58,7 @@ export function WelcomeScreen() {
       <View style={styles.pillars}>
         {PILLARS.map((pillar) => (
           <View key={pillar.title} style={styles.pillar}>
-            <Text style={[typography.bodyStrong, { color: theme.accent }]}>{pillar.title}</Text>
+            <Text style={[typography.bodyStrong, { color: theme.accentText }]}>{pillar.title}</Text>
             <Text style={[typography.body, { color: theme.textSecondary }]}>{pillar.body}</Text>
           </View>
         ))}

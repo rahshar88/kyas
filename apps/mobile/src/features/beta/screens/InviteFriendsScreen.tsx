@@ -109,7 +109,7 @@ export function InviteFriendsScreen() {
             <View style={[styles.codeCard, { backgroundColor: theme.backgroundElevated }]}>
               <Text style={[typography.label, { color: theme.textSecondary }]}>Your code</Text>
               <Text
-                style={[typography.display, { color: theme.accent, letterSpacing: 4 }]}
+                style={[typography.display, { color: theme.accentText, letterSpacing: 4 }]}
                 accessibilityLabel={`Your invitation code is ${code.split('').join(' ')}`}
                 testID="invite-code"
               >

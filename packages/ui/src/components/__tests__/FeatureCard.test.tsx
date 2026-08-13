@@ -74,6 +74,28 @@ describe('FeatureCard', () => {
     expect(view.getByTestId('card').props.accessibilityRole).toBe('button');
   });
 
+  /**
+   * §S18: future cards are "all clearly labelled Coming soon **unless enabled**".
+   *
+   * A votable card is still an unbuilt one, so the label belongs there too. The first version
+   * of this component showed the badge only on inert cards and said just "tap to vote" on the
+   * rest — which left every card on the beta home silent about whether the feature existed.
+   */
+  it('labels a votable feature as coming soon, in text and to a screen reader', async () => {
+    const view = await render(
+      <FeatureCard
+        title="Events"
+        description="Find things happening near you."
+        state="voting"
+        onPress={jest.fn()}
+        testID="card"
+      />,
+    );
+
+    expect(view.getByText('Coming soon')).toBeTruthy();
+    expect(view.getByTestId('card').props.accessibilityLabel).toContain('Coming soon');
+  });
+
   it('reflects a vote already cast in the announced state', async () => {
     const view = await render(
       <FeatureCard

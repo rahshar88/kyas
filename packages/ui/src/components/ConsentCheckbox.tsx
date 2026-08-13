@@ -82,7 +82,7 @@ export function ConsentCheckbox({
           testID={testID === undefined ? undefined : `${testID}-link`}
           style={styles.link}
         >
-          <Text style={[typography.caption, { color: theme.accent }]}>{linkLabel}</Text>
+          <Text style={[typography.caption, { color: theme.accentText }]}>{linkLabel}</Text>
         </Pressable>
       )}
     </View>

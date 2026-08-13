@@ -58,7 +58,7 @@ export function ProfileSummaryCard({
             testID={testID === undefined ? undefined : `${testID}-edit`}
             style={({ pressed }) => [styles.edit, pressed && styles.pressed]}
           >
-            <Text style={[typography.body, { color: theme.accent }]}>Edit</Text>
+            <Text style={[typography.body, { color: theme.accentText }]}>Edit</Text>
           </Pressable>
         )}
       </View>

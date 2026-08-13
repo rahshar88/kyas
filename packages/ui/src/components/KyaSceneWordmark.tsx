@@ -34,6 +34,12 @@ export function KyaSceneWordmark({ size = 'large', testID }: KyaSceneWordmarkPro
       <Text style={[style, { color: theme.textPrimary }, styles.tight]} accessibilityElementsHidden>
         Kya
       </Text>
+      {/**
+       * `accent`, not `accentText`, and deliberately: this is the logotype. WCAG 1.4.3 exempts
+       * brand marks from the contrast floor, and the Saffron half of the wordmark is the brand.
+       * Every other accent-coloured *text* in the app moved to `accentText`, which is why this
+       * one needs a reason written beside it.
+       */}
       <Text style={[style, { color: theme.accent }, styles.tight]} accessibilityElementsHidden>
         Scene
       </Text>

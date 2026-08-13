@@ -211,7 +211,7 @@ export function ReviewScreen() {
             {missing.map((step) => (
               <Text
                 key={step}
-                style={[typography.body, { color: theme.accent }]}
+                style={[typography.body, { color: theme.accentText }]}
                 accessibilityRole="link"
                 onPress={() => router.push(MISSING_STEP_ROUTES[step])}
                 testID={`review-missing-${step}`}

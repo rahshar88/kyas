@@ -51,11 +51,17 @@ export function FeatureCard({
       <View style={styles.header}>
         <Text style={[typography.bodyStrong, { color: theme.textPrimary }]}>{title}</Text>
 
-        {state === 'coming_soon' ? (
-          <View style={[styles.tag, { backgroundColor: theme.backgroundElevated }]}>
+        {/**
+         * §S18: future cards are "all clearly labelled Coming soon **unless enabled**" — so the
+         * badge belongs on a voting card too, not only on an inert one. Being votable does not
+         * make a feature available, and the first version of this screen said only "tap to
+         * vote", which left each card silent about whether it existed.
+         */}
+        {state === 'available' ? null : (
+          <View style={[styles.tag, { backgroundColor: theme.background }]}>
             <Text style={[typography.caption, { color: theme.textSecondary }]}>Coming soon</Text>
           </View>
-        ) : null}
+        )}
 
         {state === 'voting' && voted ? (
           <View style={[styles.tag, { backgroundColor: theme.positiveFill }]}>
@@ -67,7 +73,7 @@ export function FeatureCard({
       <Text style={[typography.caption, { color: theme.textSecondary }]}>{description}</Text>
 
       {state === 'voting' ? (
-        <Text style={[typography.caption, { color: theme.accent }]}>
+        <Text style={[typography.caption, { color: theme.accentText }]}>
           {voted ? 'Tap to change your mind' : 'Want this next? Tap to vote'}
         </Text>
       ) : null}
@@ -102,7 +108,7 @@ export function FeatureCard({
       accessibilityRole="button"
       accessibilityLabel={
         state === 'voting'
-          ? `${title}. ${voted ? 'You voted for this' : 'Vote for this'}. ${description}`
+          ? `${title}. Coming soon. ${voted ? 'You voted for this' : 'Vote for this'}. ${description}`
           : `${title}. ${description}`
       }
       accessibilityState={{ selected: state === 'voting' ? voted : undefined }}

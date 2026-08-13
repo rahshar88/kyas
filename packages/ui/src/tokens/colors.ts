@@ -47,6 +47,11 @@ export const semanticColors = {
     accent: colors.sceneSaffron,
     /** 7.35:1 on accent. */
     onAccent: colors.night,
+    /**
+     * Accent as *text*. Saffron holds here — 5.79:1 on background, 7.35:1 on a card — so the
+     * dark scheme keeps it. The light scheme cannot; see the note there.
+     */
+    accentText: colors.sceneSaffron,
 
     /** Fills: brand tokens, used as backgrounds behind `onStatus`. */
     positiveFill: colors.mint,
@@ -71,10 +76,23 @@ export const semanticColors = {
     textPrimary: colors.night,
     /** 6.39:1 on background. */
     textSecondary: '#525954',
-    /** Saffron is only 2.32:1 on Warm Cream, so light-mode accent *text* is not saffron;
+    /** Saffron is only 2.31:1 on Warm Cream, so light-mode accent *text* is not saffron;
         saffron remains the fill for primary actions with a Night label (7.35:1). */
     accent: colors.sceneSaffron,
     onAccent: colors.night,
+    /**
+     * The tint that comment was asking for, and which did not exist until a phone in light
+     * mode showed why it had to.
+     *
+     * Saffron as text measures 2.31:1 on Warm Cream and 2.61:1 on a white card — failing AA,
+     * and failing even the 3:1 large-text floor. Eight call sites used `accent` as a text
+     * colour regardless, because there was nothing else to reach for: `positiveText`,
+     * `dangerText` and `cautionText` all existed and `accentText` did not.
+     *
+     * 5.74:1 on background, 6.47:1 on a card. Same derivation Milestone 0 applied to Error and
+     * Warning, for the same reason.
+     */
+    accentText: '#A33E00',
 
     positiveFill: '#0E7A4B',
     dangerFill: colors.error,
