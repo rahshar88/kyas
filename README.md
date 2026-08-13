@@ -15,20 +15,25 @@ specification wins.
 
 ---
 
-## Status: Milestone 0 complete
+## Status
 
-**Running on a physical iPhone as of 8 August 2026.** Milestone 0 is the repository and
-vertical foundation (§17). What exists:
+**Milestone 0 — complete**, and verified running on a physical iPhone (8 August 2026).
+Monorepo, Expo SDK 57 app, strict TypeScript, design tokens with a WCAG AA contrast gate,
+environment validation that fails the build rather than the tester's phone, and CI compiling
+both platforms.
 
-- pnpm monorepo, Expo SDK 57 app, TypeScript strict across every package
-- Expo Router shell — S00 launch and S01 welcome only
-- Design tokens (§7.1, §7.3) with a WCAG AA contrast test as a CI gate
-- Environment validation that fails the build, not the tester's phone
-- `eas.json` profiles, Supabase folder structure, CI compiling both platforms
-- 108 tests passing across the iOS and Android Jest projects
+**Milestone 1 — built, pending a Supabase project.** Nine screens: launch, welcome, email
+sign-in, code verification, invite redemption, eligibility, study details, Sydney suburb and
+India background. Answers persist locally and resume after the app is force-closed. The
+schema, Row Level Security policies and atomic invite redemption are written and tested
+against a real PostgreSQL server.
 
-**Not** implemented: authentication, invites, eligibility, registration, Supabase tables or
-RLS, the other 21 P0 screens, or the admin console. See
+The exit criterion — _"an invited tester can authenticate and resume after app restart"_ —
+needs a live Supabase project before it can be demonstrated. See the
+[Supabase setup runbook](docs/runbooks/supabase-setup.md); it takes about 15 minutes.
+
+**Not** implemented: the S09–S17 registration steps, submission and review, the beta home,
+referrals, feedback, account deletion, or the admin console. See
 [scope boundaries](docs/product/scope-boundaries.md) for the full list and why.
 
 ## Requirements
@@ -70,6 +75,9 @@ CocoaPods, running on a real iPhone with a free Apple ID, and what to check once
 | `pnpm run mobile:prebuild:check`          | generate both native projects                    |
 | `pnpm run mobile:export`                  | bundle both platforms through Metro              |
 | `pnpm run mobile:doctor`                  | Expo SDK compatibility audit                     |
+| `pnpm run test:rls`                       | migrations + row-isolation tests on PostgreSQL   |
+| `pnpm run test:functions`                 | Deno type-check for the Edge Functions           |
+| `pnpm run supabase:deploy <ref>`          | apply schema, seed and functions to a project    |
 | `pnpm run verify:eas`                     | `eas.json` structure and secret scan             |
 | `pnpm run assets:generate`                | regenerate placeholder icons                     |
 
@@ -78,14 +86,14 @@ CocoaPods, running on a real iPhone with a free Apple ID, and what to check once
 ```
 apps/mobile/        Expo SDK 57 app — the whole of Milestone 0
 apps/admin/         placeholder; Milestone 2 owns it (§15)
-packages/ui/        design tokens + the 6 components S00/S01 need
-packages/domain/    account status, error codes, feature flags (types only)
-packages/contracts/ API response envelope (types only)
-packages/analytics/ vendor-neutral adapter + event catalogue (types only)
+packages/ui/        design tokens + the shared component library
+packages/domain/    account status, error codes, feature flags, registration schemas
+packages/contracts/ API response envelope
+packages/analytics/ vendor-neutral adapter + event catalogue
 packages/config/    shared TypeScript, ESLint, Prettier
-supabase/           structure only — no tables until Milestone 1
+supabase/           migrations, RLS policies, seed catalogues, Edge Functions, tests
 docs/               specification, architecture, ADRs, runbooks
-scripts/            config and native-output verifiers
+scripts/            config, native-output and database verifiers
 ```
 
 ## Required external accounts
@@ -93,34 +101,36 @@ scripts/            config and native-output verifiers
 Nothing here is set up yet. Each row is a founder action; the §22 column marks decisions the
 coding agent is **not** permitted to make alone.
 
-| Account or asset                                                                 | Needed by | §22 founder decision                                         |
-| -------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------ |
-| Apple Developer Program (organisation, 2FA enforced)                             | M4        | account ownership; legal entity name for the listing         |
-| App Store Connect record + bundle ids `app.kyascene`, `app.kyascene.beta`        | M4        | — (§4.5: confirm availability before the first signed build) |
-| Google Play Console + Play App Signing                                           | M5        | account ownership                                            |
-| Expo / EAS organisation (`eas init` writes the project id)                       | M4        | —                                                            |
-| Supabase organisation — **three separate projects**, dev/beta/production (§5.2)  | M1        | region and paid plan                                         |
-| Sentry organisation + beta and production projects                               | M4        | vendor approval — it processes personal data                 |
-| PostHog or equivalent analytics                                                  | M4        | vendor approval — it processes personal data                 |
-| DNS control of `kyascene.app` (AASA + `assetlinks.json`), `kyascene.io` redirect | M4/M5     | —                                                            |
-| Live privacy, terms, community-guidelines and support URLs                       | M4        | policy and retention wording                                 |
-| Web account-deletion request page (required for Play, §13.4)                     | M5        | retention policy                                             |
+| Account or asset                                                                                                         | Needed by | §22 founder decision                                         |
+| ------------------------------------------------------------------------------------------------------------------------ | --------- | ------------------------------------------------------------ |
+| Apple Developer Program — ✅ **already held**                                                                            | M4        | legal entity name for the listing                            |
+| App Store Connect record + bundle ids `app.kyascene`, `app.kyascene.beta`                                                | M4        | — (§4.5: confirm availability before the first signed build) |
+| Google Play Console + Play App Signing                                                                                   | M5        | account ownership                                            |
+| Expo / EAS organisation (`eas init` writes the project id)                                                               | M4        | —                                                            |
+| Supabase — **three separate projects**, dev/beta/production (§5.2). See [setup runbook](docs/runbooks/supabase-setup.md) | M1        | region and paid plan                                         |
+| Sentry organisation + beta and production projects                                                                       | M4        | vendor approval — it processes personal data                 |
+| PostHog or equivalent analytics                                                                                          | M4        | vendor approval — it processes personal data                 |
+| DNS control of `kyascene.app` (AASA + `assetlinks.json`), `kyascene.io` redirect                                         | M4/M5     | —                                                            |
+| Live privacy, terms, community-guidelines and support URLs                                                               | M4        | policy and retention wording                                 |
+| Web account-deletion request page (required for Play, §13.4)                                                             | M5        | retention policy                                             |
 
 ## Verification
 
 What was run and passed on this Linux environment:
 
-| Check                                                   | Result                                  |
-| ------------------------------------------------------- | --------------------------------------- |
-| `pnpm install --frozen-lockfile`                        | clean                                   |
-| `pnpm run typecheck`                                    | clean, strict, all 6 projects           |
-| `pnpm run lint` · `format:check`                        | clean                                   |
-| `pnpm run test`                                         | **108 passed** (iOS + Android projects) |
-| `expo config` for all 3 environments                    | 20 assertions each                      |
-| `expo prebuild` iOS **and** Android, all 3 environments | 21–22 native assertions each            |
-| `expo export --platform ios --platform android`         | both bundles built from one commit      |
-| `expo-doctor`                                           | **20/20**                               |
-| `verify-eas-config.mjs`                                 | 22 checks                               |
+| Check                                                   | Result                                     |
+| ------------------------------------------------------- | ------------------------------------------ |
+| `pnpm install --frozen-lockfile`                        | clean                                      |
+| `pnpm run typecheck`                                    | clean, strict, all 6 projects              |
+| `pnpm run lint` · `format:check`                        | clean                                      |
+| `pnpm run test`                                         | **206 passed** (iOS + Android projects)    |
+| `expo config` for all 3 environments                    | 20 assertions each                         |
+| `expo prebuild` iOS **and** Android, all 3 environments | 21–22 native assertions each               |
+| `expo export --platform ios --platform android`         | both bundles built from one commit         |
+| `expo-doctor`                                           | **20/20**                                  |
+| `verify-eas-config.mjs`                                 | 22 checks                                  |
+| `pnpm run test:rls` against PostgreSQL 16               | **33 passed**, incl. 8-way redemption race |
+| `pnpm run test:functions`                               | clean                                      |
 
 ### Milestone 0 exit criterion
 
@@ -155,6 +165,7 @@ need files hosted at `kyascene.app`; and Maestro execution.
 |                                                              |                                                     |
 | ------------------------------------------------------------ | --------------------------------------------------- |
 | [First run on a Mac](docs/runbooks/first-run-on-mac.md)      | Xcode, simulator, real iPhone, troubleshooting      |
+| [Supabase setup](docs/runbooks/supabase-setup.md)            | connecting a project, keys, invite codes            |
 | [Master specification](docs/product/master-specification.md) | the source of truth                                 |
 | [Scope boundaries](docs/product/scope-boundaries.md)         | P0 non-goals, drift guardrail                       |
 | [Architecture overview](docs/architecture/overview.md)       | layering, feature modules, packages                 |

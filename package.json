@@ -25,7 +25,8 @@
     "mobile:ios": "pnpm --filter @kyascene/mobile ios",
     "mobile:android": "pnpm --filter @kyascene/mobile android",
     "test:rls": "bash scripts/run-rls-tests.sh",
-    "test:functions": "cd supabase/functions && deno task check"
+    "test:functions": "cd supabase/functions && deno task check",
+    "supabase:deploy": "bash scripts/supabase-deploy.sh"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

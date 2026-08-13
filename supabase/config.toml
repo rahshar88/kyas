@@ -23,6 +23,13 @@ major_version = 17
 [db.pooler]
 enabled = false
 
+# Reference catalogues (§S06, §S08). Declared here so `supabase db push --include-seed`
+# applies them to a hosted project, and `supabase db reset` applies them locally. Every seed
+# file uses `on conflict … do update`, so re-running amends the lists rather than failing.
+[db.seed]
+enabled = true
+sql_paths = ["./seed/*.sql"]
+
 [studio]
 enabled = true
 port = 54323
