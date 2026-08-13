@@ -35,7 +35,8 @@ enabled = true
 port = 54323
 
 # Catches outbound mail locally so OTP flows can be tested without sending real email (§S03).
-[inbucket]
+# Renamed from [inbucket], which the CLI now warns is deprecated.
+[local_smtp]
 enabled = true
 port = 54324
 

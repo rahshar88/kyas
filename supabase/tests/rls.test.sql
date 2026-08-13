@@ -221,6 +221,34 @@ $$;
 
 reset role;
 
+-- The anonymous role — a caller with only the publishable key and no sign-in — must not
+-- reach anything. RLS alone would return zero rows, but §13.1 wants the table unreachable
+-- too, so a future table shipped without a policy is not world-readable by default.
+do $$
+declare
+  blocked boolean;
+  tbl text;
+begin
+  raise notice 'anonymous access';
+
+  set local role anon;
+
+  for tbl in select unnest(array['profiles', 'student_profiles', 'invites',
+                                 'invite_redemptions', 'india_states', 'education_providers'])
+  loop
+    blocked := false;
+    begin
+      execute format('select 1 from public.%I limit 1', tbl);
+    exception
+      when insufficient_privilege then blocked := true;
+    end;
+    perform pg_temp.assert(blocked, format('anon cannot reach public.%s at all', tbl));
+  end loop;
+
+  reset role;
+end
+$$;
+
 -- Structural guarantees. §13.1 requires RLS on every table holding user data, and a table with
 -- policies but RLS switched off is the dangerous inverse of one with RLS and no policies.
 do $$

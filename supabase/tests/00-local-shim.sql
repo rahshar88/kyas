@@ -43,3 +43,19 @@ end
 $$;
 
 grant usage on schema auth to authenticated, anon, service_role;
+
+/*
+ * Reproduce Supabase's default privileges.
+ *
+ * A hosted Supabase project runs, in effect:
+ *   alter default privileges in schema public
+ *     grant all on tables to postgres, anon, authenticated, service_role;
+ *
+ * So every table created by a migration is reachable by the ANONYMOUS role unless something
+ * revokes it. Without this line the local database is more locked-down than production, and
+ * a missing revoke passes the test suite while leaving the real project exposed — which is
+ * exactly what happened once. Mirroring the default keeps the tests honest.
+ */
+grant usage on schema public to anon, authenticated, service_role;
+alter default privileges in schema public
+  grant all on tables to anon, authenticated, service_role;
