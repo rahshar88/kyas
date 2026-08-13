@@ -25,23 +25,28 @@ export function SignIn() {
   const request = async () => {
     setBusy(true);
     setError(undefined);
-    try {
-      // `shouldCreateUser: false`: unlike the app, this must not mint an account. Someone
-      // typing any address into the console should not become a user at all.
-      const { error: sendError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { shouldCreateUser: false },
-      });
-      // A deliberate no-op on failure. Reporting "no such user" here would confirm which
-      // addresses exist, so the screen advances either way and a non-operator simply never
-      // receives a code.
-      if (sendError && sendError.status !== 400) throw sendError;
-      setSent(true);
-    } catch {
-      setError('Could not send a code. Try again in a minute.');
-    } finally {
-      setBusy(false);
-    }
+
+    // `shouldCreateUser: false`: unlike the app, this must not mint an account. Someone typing
+    // any address into the console should not become a user at all.
+    await supabase.auth
+      .signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+      .catch(() => undefined);
+
+    /**
+     * Advance whatever happened, and report nothing.
+     *
+     * The outcome of the send is information this screen must not leak: "no such user" would
+     * confirm which addresses are operators, and that is the one question an attacker at this
+     * form is asking. The copy on the next screen already says "if that address has access" —
+     * a visible failure contradicts it.
+     *
+     * It is also what makes the screen usable. Reporting a rate limit left an operator holding
+     * a valid code with no way to enter it, because the only route to the code field was a
+     * successful send — the same dead end the app had at S02. Codes last an hour; failing to
+     * send a new one says nothing about the one already in hand.
+     */
+    setSent(true);
+    setBusy(false);
   };
 
   const verify = async () => {
@@ -91,16 +96,14 @@ export function SignIn() {
           </>
         ) : (
           <>
-            <p className="small muted">
-              If that address has access, a six-digit code is on its way to it.
-            </p>
+            <p className="small muted">If that address has access, a code is on its way to it.</p>
             <div className="field">
-              <label htmlFor="code">Six-digit code</label>
+              <label htmlFor="code">Code from your email</label>
               <input
                 id="code"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={10}
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
               />
@@ -108,7 +111,7 @@ export function SignIn() {
             <button
               className="primary"
               onClick={() => void verify()}
-              disabled={busy || code.length !== 6}
+              disabled={busy || code.length < 6}
             >
               {busy ? 'Checking…' : 'Sign in'}
             </button>
