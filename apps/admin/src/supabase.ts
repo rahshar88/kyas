@@ -15,16 +15,29 @@ import { createClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-if (!url || !publishableKey) {
-  throw new Error(
-    'Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY.\n' +
-      'Copy apps/admin/.env.example to apps/admin/.env and fill it in.',
-  );
-}
+/**
+ * Missing configuration is reported, not thrown.
+ *
+ * Throwing here happened at module scope, before React mounted, so the page rendered
+ * completely blank with the reason visible only in the browser console — which is the one
+ * place someone running `pnpm run admin:dev` for the first time will not think to look.
+ * `apps/admin/.env` is gitignored, so a fresh clone hits this every time, and a blank page
+ * reads as "the console is broken" rather than "you have not configured it yet".
+ *
+ * App.tsx renders the instructions instead.
+ */
+export const configurationError =
+  !url || !publishableKey
+    ? 'apps/admin/.env is missing or incomplete. Copy apps/admin/.env.example to apps/admin/.env and fill in the project URL and publishable key, then restart the dev server — Vite only reads .env at boot.'
+    : undefined;
 
-export const supabase = createClient(url, publishableKey, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
-});
+export const supabase = createClient(
+  url ?? 'https://unconfigured.invalid',
+  publishableKey ?? 'unconfigured',
+  {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  },
+);
 
 export interface QueueRow {
   user_id: string;

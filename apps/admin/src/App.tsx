@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react';
 
 import { RegistrationDetail } from './RegistrationDetail';
 import { SignIn } from './SignIn';
-import { adminCall, supabase, type AuditRow, type QueueRow, type SearchRow } from './supabase';
+import {
+  adminCall,
+  configurationError,
+  supabase,
+  type AuditRow,
+  type QueueRow,
+  type SearchRow,
+} from './supabase';
 
 type Tab = 'queue' | 'search' | 'audit';
 
@@ -55,6 +62,18 @@ export function App() {
       cancelled = true;
     };
   }, [session]);
+
+  if (configurationError !== undefined) {
+    return (
+      <div className="layout" style={{ maxWidth: 560, paddingTop: 80 }}>
+        <h1>Not configured</h1>
+        <p className="muted">{configurationError}</p>
+        <pre className="panel small" style={{ whiteSpace: 'pre-wrap' }}>
+          cp apps/admin/.env.example apps/admin/.env
+        </pre>
+      </div>
+    );
+  }
 
   if (!ready) return <div className="layout muted">Loading…</div>;
   if (session === null) return <SignIn />;
