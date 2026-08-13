@@ -56,6 +56,8 @@ type StudentProfileRow = {
   hometown: string | null;
   created_at: string;
   updated_at: string;
+  /** §S10 'prefer not to specify'. Distinct from 'none selected yet'. */
+  communities_not_specified: boolean;
 };
 
 type IndiaStateRow = {
@@ -72,6 +74,60 @@ type EducationProviderRow = {
   city: string | null;
   sort_order: number;
   active: boolean;
+};
+
+/** Milestone 2 rows (§11.1). Catalogues share one shape, so they share one type. */
+type CatalogueRow = {
+  code: string;
+  label: string;
+  active: boolean;
+  sort_order: number;
+};
+
+type LanguageRow = { code: string; name: string; active: boolean; sort_order: number };
+
+type ProfileLanguageRow = {
+  user_id: string;
+  language_code: string;
+  proficiency: 'native' | 'fluent' | 'conversational' | 'learning';
+};
+
+type ProfileCodeRow = { user_id: string; code: string };
+type ProfileGoalRow = { user_id: string; goal_code: string; rank: number };
+
+type ProfileVisibilityRow = {
+  user_id: string;
+  show_suburb: boolean;
+  show_india_state: boolean;
+  show_hometown: boolean;
+  show_languages: boolean;
+  show_communities: boolean;
+  show_study: boolean;
+};
+
+type ConsentRow = {
+  id: string;
+  user_id: string;
+  policy_type: 'terms' | 'privacy' | 'community_guidelines' | 'beta_changes' | 'marketing';
+  version: string;
+  accepted: boolean;
+  accepted_at: string;
+};
+
+type VerificationRequestRow = {
+  id: string;
+  user_id: string;
+  state: 'pending' | 'approved' | 'rejected' | 'withdrawn';
+  submitted_at: string;
+  reviewed_at: string | null;
+  rejection_category:
+    | 'not_eligible'
+    | 'incomplete_information'
+    | 'unable_to_verify_study'
+    | 'duplicate_account'
+    | 'safety_concern'
+    | 'other'
+    | null;
 };
 
 export type Database = {
@@ -99,6 +155,73 @@ export type Database = {
         Row: EducationProviderRow;
         Insert: EducationProviderRow;
         Update: Partial<EducationProviderRow>;
+        Relationships: [];
+      };
+      languages: {
+        Row: LanguageRow;
+        Insert: LanguageRow;
+        Update: Partial<LanguageRow>;
+        Relationships: [];
+      };
+      communities: {
+        Row: CatalogueRow;
+        Insert: CatalogueRow;
+        Update: Partial<CatalogueRow>;
+        Relationships: [];
+      };
+      interests: {
+        Row: CatalogueRow & { category: string };
+        Insert: CatalogueRow & { category: string };
+        Update: Partial<CatalogueRow & { category: string }>;
+        Relationships: [];
+      };
+      goals: {
+        Row: CatalogueRow;
+        Insert: CatalogueRow;
+        Update: Partial<CatalogueRow>;
+        Relationships: [];
+      };
+      profile_languages: {
+        Row: ProfileLanguageRow;
+        Insert: ProfileLanguageRow;
+        Update: Partial<ProfileLanguageRow>;
+        Relationships: [];
+      };
+      profile_communities: {
+        Row: { user_id: string; community_code: string };
+        Insert: { user_id: string; community_code: string };
+        Update: Partial<ProfileCodeRow>;
+        Relationships: [];
+      };
+      profile_interests: {
+        Row: { user_id: string; interest_code: string };
+        Insert: { user_id: string; interest_code: string };
+        Update: Partial<ProfileCodeRow>;
+        Relationships: [];
+      };
+      profile_goals: {
+        Row: ProfileGoalRow;
+        Insert: ProfileGoalRow;
+        Update: Partial<ProfileGoalRow>;
+        Relationships: [];
+      };
+      profile_visibility: {
+        Row: ProfileVisibilityRow;
+        Insert: Pick<ProfileVisibilityRow, 'user_id'> &
+          Partial<Omit<ProfileVisibilityRow, 'user_id'>>;
+        Update: Partial<ProfileVisibilityRow>;
+        Relationships: [];
+      };
+      consents: {
+        Row: ConsentRow;
+        Insert: Omit<ConsentRow, 'id' | 'accepted_at'> & Partial<Pick<ConsentRow, 'accepted_at'>>;
+        Update: never;
+        Relationships: [];
+      };
+      verification_requests: {
+        Row: VerificationRequestRow;
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
     };

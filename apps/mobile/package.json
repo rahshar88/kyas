@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
-  "description": "KyaScene mobile app \u2014 Expo SDK 57 / React Native. iOS first, Android second.",
+  "description": "KyaScene mobile app — Expo SDK 57 / React Native. iOS first, Android second.",
   "scripts": {
     "start": "expo start",
     "ios": "expo run:ios",
@@ -30,6 +30,8 @@
     "expo": "~57.0.11",
     "expo-constants": "~57.0.9",
     "expo-dev-client": "~57.0.10",
+    "expo-image-manipulator": "~57.0.9",
+    "expo-image-picker": "~57.0.9",
     "expo-linking": "~57.0.5",
     "expo-router": "~57.0.11",
     "expo-secure-store": "~57.0.1",

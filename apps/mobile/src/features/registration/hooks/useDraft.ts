@@ -61,5 +61,28 @@ export function useDraft() {
     [userId],
   );
 
-  return { draft, isLoading, saveStep };
+  /**
+   * Records answers without marking any step complete.
+   *
+   * S13 needs this: the photograph is optional (§S13), so it is deliberately not one of
+   * `REGISTRATION_STEPS` — a step that can be skipped cannot say where someone got to,
+   * because skipped and never-reached would be the same state and §10.2's resume would loop
+   * on it forever. The answer still has to be saved, hence a write that carries no progress.
+   */
+  const patch = useCallback(
+    async (change: Partial<Omit<RegistrationDraft, 'version' | 'updatedAt' | 'completed'>>) => {
+      if (!userId) return;
+
+      setIsLoading(true);
+      try {
+        const next = await draftRepository.patch(userId, change);
+        setLoaded({ userId, draft: next });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userId],
+  );
+
+  return { draft, isLoading, saveStep, patch };
 }

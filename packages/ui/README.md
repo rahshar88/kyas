@@ -48,27 +48,36 @@ real usage rather than guessed at.
 | `PrimaryButton`       | ✅ built                                 | S01                |
 | `SecondaryButton`     | ✅ built                                 | S01                |
 | `TextButton`          | ✅ built                                 | S01                |
-| `AppHeader`           | pending                                  | S05 (M1)           |
-| `TextField`           | pending                                  | S02 (M1)           |
-| `EmailField`          | pending                                  | S02 (M1)           |
-| `StepProgress`        | pending                                  | S05 (M1)           |
-| `ChoiceCard`          | pending                                  | S05 (M1)           |
-| `InlineError`         | pending                                  | S02 (M1)           |
-| `OfflineBanner`       | pending                                  | S06 (M1)           |
-| `SelectField`         | pending                                  | S06 (M1)           |
+| `AppHeader`           | ✅ built                                 | S05 (M1)           |
+| `TextField`           | ✅ built                                 | S02 (M1)           |
+| `EmailField`          | ✅ built                                 | S02 (M1)           |
+| `StepProgress`        | ✅ built                                 | S05 (M1)           |
+| `ChoiceCard`          | ✅ built                                 | S05 (M1)           |
+| `InlineError`         | ✅ built                                 | S02 (M1)           |
+| `OfflineBanner`       | ✅ built                                 | S06 (M1)           |
+| `SelectField`         | ✅ built                                 | S06 (M1)           |
 | `SearchField`         | pending                                  | S06 (M1)           |
 | `LoadingSkeleton`     | pending                                  | S06 (M1)           |
 | `FullScreenError`     | pending                                  | S00 hardening (M1) |
-| `MultiSelectChips`    | pending                                  | S09 (M2)           |
+| `MultiSelectChips`    | ✅ built                                 | S09 (M2)           |
 | `StudentAvatar`       | pending                                  | S13 (M2)           |
-| `ProfileSummaryCard`  | pending                                  | S16 (M2)           |
+| `ProfileSummaryCard`  | ✅ built                                 | S16 (M2)           |
 | `PermissionExplainer` | pending                                  | S13 (M2)           |
-| `StatusBadge`         | pending                                  | S17 (M2)           |
+| `StatusBadge`         | ✅ built                                 | S17 (M2)           |
 | `IconButton`          | pending                                  | S13 (M2)           |
 | `Toast`               | pending                                  | S14 (M2)           |
 | `EmptyState`          | pending                                  | S18 (M3)           |
 | `ConfirmationSheet`   | pending                                  | S22 (M3)           |
 | `DestructiveButton`   | pending                                  | S22 (M3)           |
+| `ToggleRow`           | ✅ built (beyond §7.4)                   | S14 (M2)           |
+| `ConsentCheckbox`     | ✅ built (beyond §7.4)                   | S15 (M2)           |
+
+Two components are not in §7.4's list of 26. `ToggleRow` exists because S14 needs six labelled
+switches on one screen and S08 had already written two inline — six hand-built rows is six
+chances for the visible label and the accessibility label to drift apart. `ConsentCheckbox`
+exists because §S15 forbids bundling required and optional consent, and a component that can
+only ever represent **one** policy is what makes an "accept all" control impossible to add by
+accident.
 
 ## Rules for every component
 

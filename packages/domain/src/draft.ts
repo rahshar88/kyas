@@ -1,3 +1,10 @@
+import type { ConsentChoice } from './consent';
+import type {
+  CommunitySelection,
+  LanguageChoice,
+  ProfilePhoto,
+  VisibilityPreferences,
+} from './profile';
 import type {
   EligibilityAnswers,
   IndiaBackground,
@@ -16,15 +23,34 @@ import type {
  * would otherwise read stale data into a new form and either crash or silently mis-populate
  * a student's registration. On a version mismatch the draft is discarded and the student
  * restarts — annoying, but honest, and far better than submitting mangled answers.
+ *
+ * **2** since Milestone 2 added S09–S15. Anyone holding a Milestone 1 draft loses the first
+ * four steps and re-enters them; that is a couple of minutes with a visible reason, against
+ * the alternative of submitting half-migrated answers under a real person's name.
  */
-export const REGISTRATION_DRAFT_VERSION = 1;
+export const REGISTRATION_DRAFT_VERSION = 2;
 
-/** The steps Milestone 1 covers, in order (§8.1). */
+/**
+ * The registration steps in order (§8.1), S05 through S15.
+ *
+ * Order is load-bearing: `nextIncompleteStep` resumes the first unfinished one, so this array
+ * is the single definition of "what comes next" for both the flow and §10.2's resume.
+ *
+ * S13 (photograph) is absent on purpose. §S13 makes it optional and requires that skipping
+ * remains a first-class outcome; including it here would make an unfinished photograph block
+ * resume forever, since "skipped" and "not reached" would be indistinguishable.
+ */
 export const REGISTRATION_STEPS = [
   'eligibility',
   'study',
   'sydney-location',
   'india-background',
+  'languages',
+  'communities',
+  'interests',
+  'goals',
+  'privacy',
+  'consent',
 ] as const;
 
 export type RegistrationStep = (typeof REGISTRATION_STEPS)[number];
@@ -37,6 +63,15 @@ export interface RegistrationDraft {
   study?: StudyDetails;
   sydneyLocation?: SydneyLocation;
   indiaBackground?: IndiaBackground;
+  languages?: LanguageChoice[];
+  communities?: CommunitySelection;
+  interests?: string[];
+  /** Rank order — the index is the rank, so screen order and stored rank cannot drift. */
+  goals?: string[];
+  /** Optional throughout (§S13). Absent means not chosen; `localUri` absent means skipped. */
+  photo?: ProfilePhoto;
+  visibility?: VisibilityPreferences;
+  consents?: ConsentChoice[];
   updatedAt: string;
 }
 
