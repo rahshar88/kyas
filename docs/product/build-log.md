@@ -403,6 +403,113 @@ founder accounts are approved in SQL with an audit record marking it a bootstrap
 
 ---
 
+## Milestone 3 — beta home, referrals and feedback
+
+**Status: built. Not yet walked end to end on a device.**
+
+§21: _"Deliverables: S18–S22, feature voting, referral sharing, feedback, settings, push
+foundation and deletion workflow."_ §21.5 adds the boundary — no social feed.
+
+### The database
+
+Six tables, plus one column on an existing one.
+
+| Table                | Purpose                                                                            |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| `feature_flags`      | §6.5's server-managed switches. Readable by any tester, writable by nobody         |
+| `feature_votes`      | §S18 voting. One vote per person per feature, by primary key                       |
+| `announcements`      | §S18. Readable only by approved accounts, and only while active                    |
+| `feedback`           | §S20. Append-only — no update, no delete, by anyone                                |
+| `push_tokens`        | §21.5's foundation. Unique on the token, not the user                              |
+| `deletion_requests`  | §S22. One open request per person, by partial unique index                         |
+| `invites.code_plain` | §S19. Referral codes only — [ADR-0006](../decisions/0006-referral-code-storage.md) |
+
+**Three rules live in SQL because they change more than one row.** `ensure_referral_invite`
+mints a code once and returns the existing one on every later call. `request_account_deletion`
+records the request and moves status to `deletion_pending` in one transaction, because either
+half alone is worse than neither — an account that still works with a deletion nobody actions,
+or a person locked out of an account nobody deletes. A `BEFORE INSERT` trigger assigns the
+§S20 reference with collision retry, so a client cannot choose one and land in someone else's
+support thread.
+
+**Vote tallies are deliberately unreadable by clients.** "148 people want this" from a table a
+client can query means the client can also query who they are.
+
+### 30 database assertions
+
+Isolation on every new table, one vote per person per feature, feedback immutable once filed,
+an account under review unable to read beta announcements, referral issuance idempotent and
+refused before approval, deletion idempotent, and no unbuilt feature switched on in the seed.
+
+The existing RLS suite caught the four new user tables not FORCEing row security **before a
+single test had been written for them** — it derives the list of tables that must from their
+column names, so a new table is covered without anyone remembering.
+
+### The app
+
+Five screens, six components, one provider, two Edge Functions, 74 new tests.
+
+- **S18 Beta home** — greeting by name, ranked goals, announcements, invite progress and
+  feature-voting cards
+- **S19 Invite friends** — code, remaining seats, share sheet, redemption **count**
+- **S20 Beta feedback** — category, optional rating, comment, reference number
+- **S21 Profile and settings** — everything on one screen, no submenus
+- **S22 Delete account** — effect explained, `DELETE` typed, signed out immediately
+- Plus a notifications screen carrying the push-token foundation
+
+**§S18's acceptance criterion is structural, not disciplined.** "No disabled feature looks
+tappable" is enforced by `FeatureCard` rendering an unavailable card as a `View` rather than a
+disabled `Pressable` — a disabled Pressable is still a button in the accessibility tree, so
+VoiceOver announces "Scene feed, button, dimmed" and invites someone to activate something
+inert. Styling it grey satisfies the sentence for sighted users and fails it for everyone else.
+"Controlled by server flags" is enforced by `FlagsProvider` starting at all-false and staying
+there when the fetch fails, so a network problem hides features rather than revealing them.
+
+**§S19 shows a count and never a list.** §S19 permits revealing referred users only once they
+"independently consent and connect in a future milestone" — redeeming a code is consent to join
+KyaScene, not consent to being named to whoever invited you.
+
+**§S20 has no `mailto:` anywhere.** A tester without Mail configured — most people on a work or
+shared phone — would otherwise have no way to report anything at all.
+
+**§S21 puts legal and deletion on the first screen.** The pattern of burying "delete account"
+under Account → Advanced → Manage exists to reduce deletions. What protects against a mistap is
+S22's typed confirmation, not a hard-to-find control.
+
+### Problems found and fixed
+
+**A test that could not test what it claimed.** The first `FeatureCard` test fired a press and
+asserted the handler did not run. It failed — RNTL's `fireEvent` traverses _upwards_ and found
+the `onPress` passed to the component itself, so it reported a call even though the rendered
+element had none. It could not tell an inert card from a button, which was the only question.
+The assertion moved to the accessibility tree, where the claim actually lives.
+
+**Widening `AnalyticsProperties` is a privacy decision.** `featureKey` and `feedbackCategory`
+were added with the reasoning written at the type: both are closed identifiers we chose, never
+anything a person typed. A test asserts the feedback comment — the field most likely to name
+someone — never reaches the analytics adapter, because that leak would look perfectly ordinary
+in review.
+
+**Push cannot work yet, and says so.** `getExpoPushTokenAsync` needs an `aps-environment`
+entitlement that EAS adds only once an Apple push key exists, which is a §22 decision nobody
+has made. `unavailable` is therefore a first-class outcome, and the screen says it is our side
+rather than sending a tester to Settings to fix something that is not theirs to fix.
+
+### Still open
+
+**Nothing here has run on a phone.** Every one of the nine bugs Milestone 2 shipped was found
+on a device and none by the test suite, so this section stays honest: 464 unit tests and 136
+database assertions are evidence about the parts, not the whole. Two native dependencies
+(`expo-clipboard`, `expo-notifications`) changed the fingerprint, so this needs a **build**,
+not an update.
+
+**Deletion records intent and erases nothing.** §S22 asks for deletion "according to the
+approved retention policy", which does not exist. The job that acts on `scheduled_for` is the
+next thing to build once it does, and `docs/runbooks/beta-operations.md` includes the query for
+finding accounts in that state so they are not left unattended.
+
+---
+
 ## Tooling added along the way
 
 | Capability                                                    | Where                                               |

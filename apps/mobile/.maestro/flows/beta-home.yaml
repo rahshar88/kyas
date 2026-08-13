@@ -1,0 +1,102 @@
+# §16.2's approved-user journey: S18 → S19 → S20 → S21 → S22.
+#
+# Starts from an already-approved, already-signed-in account. Registration is covered by its
+# own flow; repeating eleven steps here would make this fail for reasons that have nothing to
+# do with what it is testing.
+#
+# Prerequisites, because this flow cannot create them for itself:
+#   * the account is `approved` (an operator approved it in the console)
+#   * `referrals_enabled` and `feedback_enabled` are on in `feature_flags`
+appId: app.kyascene.beta
+name: An approved tester can use the beta
+---
+- launchApp
+
+# ---------------------------------------------------------------- S18 home
+- assertVisible:
+    id: 'beta-home'
+# §S18: "Personal greeting". Matches any name rather than a fixture, so this flow works
+# against whatever account the person running it happens to be signed into.
+- assertVisible: 'Hi .*'
+
+# §S18 acceptance: "No disabled feature looks tappable."
+- assertVisible: 'Coming to KyaScene'
+
+# Feature voting. Tapping a card for something unbuilt records a vote and goes nowhere.
+- tapOn:
+    id: 'home-feature-events_enabled'
+- assertVisible:
+    id: 'beta-home'
+
+# --------------------------------------------------------- S19 invitations
+- tapOn:
+    id: 'home-referral'
+- assertVisible:
+    id: 'invite-code'
+- assertVisible: '.* of .* invitations left'
+# §S19: a count, never a list of who redeemed.
+- assertVisible: 'We do not show you who'
+- tapOn:
+    id: 'invite-copy'
+- assertVisible: 'Copied'
+- back
+
+# ------------------------------------------------------------- S20 feedback
+- tapOn:
+    id: 'home-feedback'
+# §S20: the warning is above the field, so it is visible before anything is typed.
+- assertVisible: 'Please do not include passwords.*'
+- tapOn:
+    id: 'feedback-category'
+- tapOn: 'Something is confusing'
+- tapOn:
+    id: 'feedback-rating-4'
+- tapOn:
+    id: 'feedback-comment'
+- inputText: 'End-to-end check from the Maestro flow. Safe to ignore.'
+- hideKeyboard
+- tapOn:
+    id: 'feedback-submit'
+# §S20 acceptance: "returns a reference number".
+- assertVisible:
+    id: 'feedback-reference'
+- assertVisible: 'KYA-.*'
+- tapOn:
+    id: 'feedback-done'
+
+# ------------------------------------------------------------- S21 settings
+- tapOn:
+    id: 'home-settings'
+# §S21 acceptance: "Legal and account-deletion actions are available without searching
+# multiple menus." All four on the first screen, no submenu.
+- assertVisible:
+    id: 'settings-privacy-policy'
+- assertVisible:
+    id: 'settings-terms'
+- assertVisible:
+    id: 'settings-support'
+- assertVisible:
+    id: 'settings-delete'
+
+# ---------------------------------------------------- S22 deletion, cancelled
+#
+# Deliberately not carried through. A flow that deleted the account would work once and then
+# fail forever, and there is no way to undo it — §S22 records the request and closes the
+# account. What is worth proving is the guard: opening the sheet deletes nothing, and the
+# confirmation cannot be satisfied by tapping.
+- tapOn:
+    id: 'settings-delete'
+- assertVisible: 'What happens'
+- tapOn:
+    id: 'delete-start'
+- assertVisible:
+    id: 'delete-confirmation'
+# §S22: "Require a deliberate confirmation." The button is inert until DELETE is typed.
+- tapOn:
+    id: 'confirmation-confirm'
+- assertVisible:
+    id: 'delete-confirmation'
+- tapOn:
+    id: 'confirmation-cancel'
+- assertVisible:
+    id: 'delete-account-screen'

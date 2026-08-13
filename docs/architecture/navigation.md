@@ -28,17 +28,35 @@ the launch screen and `(public)/welcome` — §21.2 limits it to exactly that.
 | `(registration)/review`           | S16 Review profile                  | M2     |
 | `(registration)/submitted`        | S17 Registration status             | M2     |
 | `(approved)/home`                 | S18 Beta home                       | M3     |
-| `(approved)/invite`               | S19 Invite friends                  | M3     |
+| `(approved)/invite-friends`       | S19 Invite friends                  | M3     |
 | `(approved)/feedback`             | S20 Beta feedback                   | M3     |
-| `(approved)/profile`              | S21 Profile and settings            | M3     |
-| `(approved)/settings`             | S21 Settings                        | M3     |
+| `(approved)/settings`             | S21 Profile and settings            | M3     |
+| `(approved)/notifications`        | Notification preferences (§S21)     | M3     |
 | `(approved)/delete-account`       | S22 Delete account                  | M3     |
 
 S04 (beta invitation) sits in the registration flow and is added in Milestone 1.
 
-## Why the empty groups do not exist yet
+§S21 lists "Edit profile, privacy, notification preferences" as items on one screen. Editing a
+profile and privacy reuse the registration routes (`/review`, `/privacy`) rather than
+duplicating those forms behind a second set of screens — the same questions, asked once. Only
+notification preferences needed a route of its own, because nothing in registration collects
+them.
 
-`(registration)` and `(approved)` have **no route files** in Milestone 0, deliberately:
+## The `(approved)` guard
+
+`app/(approved)/_layout.tsx` redirects to S17 unless `canEnterBeta(status)` holds against the
+status the **server** reported (§8.2: "route guards must be derived from server status, not
+only client state"). While the status is still unknown it renders nothing rather than
+redirecting: bouncing to S17 for the moment between launch and the status arriving reads as
+being thrown out of the app you were just in.
+
+`FlagsProvider` is mounted by that layout rather than the root, because §6.5's flags describe
+what exists inside the beta and fetching them for someone who cannot reach it is a request
+with no reader.
+
+## Why the empty groups did not exist in Milestone 0
+
+`(registration)` and `(approved)` had **no route files** in Milestone 0, deliberately:
 
 - §21.2 says "minimal launch screen and welcome route only".
 - An Expo Router group with no leaf routes still produces typed-route entries, so

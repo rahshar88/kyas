@@ -10,6 +10,7 @@ Record."_
 | [0003](0003-environment-validation.md) | Environment configuration and fail-loud validation  | accepted |
 | [0004](0004-eas-project-ownership.md)  | EAS project ownership and untethered distribution   | accepted |
 | [0005](0005-transactional-email.md)    | Transactional email provider (Resend)               | accepted |
+| [0006](0006-referral-code-storage.md)  | Storing referral codes in readable form             | accepted |
 
 ## Decisions the coding agent may NOT make alone (§22)
 
