@@ -93,8 +93,12 @@ cd ~/kyas && git pull && pnpm install
 ```
 
 ```bash
-pnpm run supabase:deploy
+pnpm run supabase:deploy <project-ref>
 ```
+
+The ref is the subdomain of your project URL — for `https://abcdefgh.supabase.co` it is
+`abcdefgh`. There is deliberately no default: §5.2 keeps beta and production separate, so the
+script refuses to deploy to a project you have not named.
 
 ```bash
 pnpm run eas:build:preview

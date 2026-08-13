@@ -28,7 +28,15 @@ SUPABASE="npx --yes supabase@latest"
 
 if [ -z "${PROJECT_REF}" ]; then
   echo "usage: pnpm run supabase:deploy <project-ref>" >&2
-  echo "  the ref is the subdomain of your project URL, e.g. abcdefgh" >&2
+  echo >&2
+  echo "  The ref is the subdomain of your project URL:" >&2
+  echo "    https://abcdefgh.supabase.co  ->  abcdefgh" >&2
+  echo >&2
+  echo "  Find it in the Supabase dashboard under Project Settings > General," >&2
+  echo "  or read it from apps/mobile/eas.json (EXPO_PUBLIC_SUPABASE_URL)." >&2
+  echo >&2
+  echo "  There is no default on purpose: §5.2 keeps beta and production separate," >&2
+  echo "  so this never deploys to a project you have not named." >&2
   exit 2
 fi
 
