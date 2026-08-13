@@ -30,7 +30,10 @@
     "eas:build:preview": "node scripts/verify-eas-config.mjs --profile preview && node scripts/verify-eas-build-env.mjs --profile preview && cd apps/mobile && npx eas-cli@latest build --profile preview --platform ios",
     "eas:update": "node scripts/verify-eas-config.mjs --profile preview && node scripts/verify-eas-build-env.mjs --profile preview && cd apps/mobile && npx eas-cli@latest update --branch preview",
     "eas:build:development": "node scripts/verify-eas-config.mjs --profile development && node scripts/verify-eas-build-env.mjs --profile development && cd apps/mobile && npx eas-cli@latest build --profile development --platform ios",
-    "verify:eas:env": "node scripts/verify-eas-build-env.mjs"
+    "verify:eas:env": "node scripts/verify-eas-build-env.mjs",
+    "admin:dev": "pnpm --filter @kyascene/admin dev",
+    "admin:build": "pnpm --filter @kyascene/admin build",
+    "verify:consent": "node scripts/verify-consent-version.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

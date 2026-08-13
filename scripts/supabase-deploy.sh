@@ -45,7 +45,7 @@ echo "→ applying migrations and seed data"
 ${SUPABASE} db push --include-seed
 
 echo "→ deploying Edge Functions"
-${SUPABASE} functions deploy redeem-invite submit-registration admin-review-registration --project-ref "${PROJECT_REF}"
+${SUPABASE} functions deploy redeem-invite submit-registration admin-review-registration admin-console --project-ref "${PROJECT_REF}"
 
 echo ""
 echo "✔ deployed to ${PROJECT_REF}"

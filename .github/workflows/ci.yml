@@ -163,6 +163,28 @@ jobs:
         working-directory: supabase/functions
         run: deno task check
 
+  # §15's private console is a browser bundle: anything inside it is public. This builds it
+  # and proves it carries no credential beyond the publishable key.
+  admin-console:
+    name: Admin console
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_value
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run admin:build
+      - name: No privileged credential in the bundle
+        run: node scripts/verify-admin-bundle.mjs
+
   # Spec §13.1: "Dependency and secret scanning in CI."
   security:
     name: Dependencies and secrets
