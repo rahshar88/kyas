@@ -45,6 +45,12 @@ jobs:
       - name: eas.json structure and secret scan
         run: node scripts/verify-eas-config.mjs
 
+      # A build server has no .env, so a profile missing a variable fails at EAS's "Read app
+      # config" phase — twenty minutes of queue for an error message that names neither the
+      # variable nor the file. This resolves the config the way that phase does, in seconds.
+      - name: EAS profiles resolve on a clean checkout
+        run: node scripts/verify-eas-build-env.mjs
+
   # The §5.4 "iOS/Android configuration validation" gate, and the strongest available
   # evidence for §20's "iOS and Android builds compile from the same commit" without a Mac.
   config-validation:

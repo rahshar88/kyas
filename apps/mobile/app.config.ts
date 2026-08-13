@@ -26,6 +26,18 @@ import { parseEnv, type AppEnvironment } from './env.config';
  * variable still fails the build, which is the point of ADR-0003.
  */
 function loadDotEnv(): void {
+  /**
+   * The one way to switch this off.
+   *
+   * It cannot key on `EXPO_NO_DOTENV`, because EAS CLI sets that on every invocation and
+   * suppressing the load there is the bug this function exists to fix. But something has to
+   * be able to opt out, or a developer's local `.env` silently masks a build profile that is
+   * missing variables — which is exactly how a broken `preview` profile reached the build
+   * queue. `scripts/verify-eas-build-env.mjs` sets this to reproduce a build server faithfully
+   * on a machine that has a `.env` sitting right there.
+   */
+  if (process.env.KYASCENE_IGNORE_DOTENV === '1') return;
+
   const envPath = join(__dirname, '.env');
   if (!existsSync(envPath)) return;
 

@@ -49,17 +49,53 @@ readable by anyone who downloads the app.**
 
 ### Where each value lives
 
-| Kind                                    | Home                                                           |
-| --------------------------------------- | -------------------------------------------------------------- |
-| Publishable, local development          | `apps/mobile/.env` (gitignored; copy `.env.example`)           |
-| Publishable, beta and production builds | EAS environment variables (`eas env:create`)                   |
-| Service-role keys, provider secrets     | Supabase Edge Function secrets                                 |
-| Signing credentials                     | EAS credentials — never in the repository                      |
-| CI placeholders                         | `.github/workflows/ci.yml` `env:` — obviously fake, never real |
+| Kind                                            | Home                                                           |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| Publishable, local development                  | `apps/mobile/.env` (gitignored; copy `.env.example`)           |
+| Publishable, `development` and `preview` builds | `eas.json`, in the `dev-environment` profile                   |
+| Publishable, beta and production builds         | EAS environment variables (`eas env:create`)                   |
+| Service-role keys, provider secrets             | Supabase Edge Function secrets                                 |
+| Signing credentials                             | EAS credentials — never in the repository                      |
+| CI placeholders                                 | `.github/workflows/ci.yml` `env:` — obviously fake, never real |
 
-`eas.json` carries only `EXPO_PUBLIC_ENVIRONMENT` per profile. Every other publishable value
-comes from EAS environment variables so that beta and production Supabase URLs stay out of
-git. `scripts/verify-eas-config.mjs` fails CI if a privileged-looking key appears in it.
+### The rule that makes this non-obvious
+
+**`.env` does not exist on an EAS build server.** It is gitignored, so it is not in the archive
+EAS uploads. Whatever the build profile's `env` block supplies **is the entire environment**.
+
+A profile carrying only `EXPO_PUBLIC_ENVIRONMENT` therefore resolves perfectly on a developer's
+machine — where `.env` fills the gaps — and fails on EAS at the "Read app config" phase. The
+CLI reports that as `Unknown error. See logs of the Read app config build phase`, naming
+neither the variable nor the file.
+
+That cost a real iOS build on 13 August. Two gates now make it impossible to repeat:
+
+- `scripts/verify-eas-config.mjs` runs each profile's merged `env` through the **same Zod
+  schema** `app.config.ts` uses, so a variable added to the schema is immediately required of
+  every profile.
+- `scripts/verify-eas-build-env.mjs` goes further and actually runs `expo config` per profile
+  with `KYASCENE_IGNORE_DOTENV=1` and every inherited `EXPO_PUBLIC_*` stripped — reproducing
+  the server's "Read app config" phase on a machine that has a `.env` sitting right there.
+
+Both run in CI, and both run as a preflight before `pnpm run eas:build:preview` and
+`pnpm run eas:update`, so a broken profile fails in about a second instead of after a queue.
+
+### Why the development values are committed, and beta's are not
+
+The `development` and `preview` profiles build against the shared development Supabase project.
+Its URL and **publishable** key are committed in `eas.json` because they are published by
+definition — they ship inside the app bundle, where anyone who downloads it can read them. Row
+Level Security is what protects that data, not the secrecy of the key (§13.1); this is why the
+RLS suite exists and why the anonymous role is revoked from every table.
+
+Beta and production get their values from EAS environment variables instead. Not because those
+keys are more secret, but because §5.2 requires separate Supabase projects and §22 reserves the
+Sentry and analytics vendor choices for the founder — so those profiles stay deliberately
+incomplete, and the verifier reports them as pending rather than quietly passing.
+
+`scripts/verify-eas-config.mjs` fails CI if a privileged-looking value appears in `eas.json`,
+including `sb_secret_` and `service_role`, which is the one paste that would undo all of the
+above.
 
 ## Validation
 
@@ -83,6 +119,10 @@ Two implementation constraints, both load-bearing:
 
 ```bash
 cp apps/mobile/.env.example apps/mobile/.env
-# fill in the Supabase values, then:
+```
+
+Fill in the Supabase values, then:
+
+```bash
 pnpm --filter @kyascene/mobile start
 ```

@@ -2,7 +2,7 @@
   "name": "kyascene",
   "version": "0.1.0",
   "private": true,
-  "description": "KyaScene \u2014 the private community app for students from India studying in Australia. Powered by 1818.",
+  "description": "KyaScene — the private community app for students from India studying in Australia. Powered by 1818.",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22.13.0",
@@ -27,8 +27,10 @@
     "test:rls": "bash scripts/run-rls-tests.sh",
     "test:functions": "cd supabase/functions && deno task check",
     "supabase:deploy": "bash scripts/supabase-deploy.sh",
-    "eas:build:preview": "cd apps/mobile && npx eas-cli@latest build --profile preview --platform ios",
-    "eas:update": "cd apps/mobile && npx eas-cli@latest update --branch preview"
+    "eas:build:preview": "node scripts/verify-eas-config.mjs --profile preview && node scripts/verify-eas-build-env.mjs --profile preview && cd apps/mobile && npx eas-cli@latest build --profile preview --platform ios",
+    "eas:update": "node scripts/verify-eas-config.mjs --profile preview && node scripts/verify-eas-build-env.mjs --profile preview && cd apps/mobile && npx eas-cli@latest update --branch preview",
+    "eas:build:development": "node scripts/verify-eas-config.mjs --profile development && node scripts/verify-eas-build-env.mjs --profile development && cd apps/mobile && npx eas-cli@latest build --profile development --platform ios",
+    "verify:eas:env": "node scripts/verify-eas-build-env.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

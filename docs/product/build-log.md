@@ -205,6 +205,46 @@ install and quietly fetch another project's JavaScript.
 one account; without it EAS resolves against the personal account and reports a project that
 does not exist there.
 
+**The first build failed, and the verification I had written did not catch it.** The `preview`
+profile supplied only `EXPO_PUBLIC_ENVIRONMENT`; the Supabase URL, publishable key and three
+legal URLs lived in `apps/mobile/.env`, which is gitignored and therefore **does not exist on
+an EAS build server**. The build failed at "Read app config" after roughly twenty minutes of
+queue, with `Unknown error. See logs of the Read app config build phase` — a summary naming
+neither the variable nor the file.
+
+The environment validation from ADR-0003 did exactly its job: it refused to build a
+misconfigured app. The failure was that it did so in the most expensive place available.
+
+The deeper defect was in the checks. `verify-eas-config.mjs` had 22 green assertions about
+`eas.json` and asked none of them the only question that mattered — whether a profile can
+produce a valid config — and `preview`, the profile actually used to build, was **not in the
+list of profiles it checked at all**. `docs/architecture/environments.md` compounded it by
+documenting the intended design ("every other publishable value comes from EAS environment
+variables") as though it had been done; the variables were never created.
+
+Fixed in three layers, each verified against a reintroduction of the bug:
+
+1. `eas.json` gained a `dev-environment` mixin carrying the full publishable environment, which
+   `development` and `preview` extend.
+2. `verify-eas-config.mjs` now covers every buildable profile, resolves `extends` chains, and
+   runs each profile's merged environment through **the same Zod schema `app.config.ts` uses**
+   — so a variable added to the schema is immediately required of every profile. Profiles that
+   cannot be complete yet (beta, production) are listed with their reason and still fail when
+   named explicitly, so building one gets the missing list in a second.
+3. `verify-eas-build-env.mjs` actually runs `expo config` per profile with
+   `KYASCENE_IGNORE_DOTENV=1` and every inherited `EXPO_PUBLIC_*` stripped, reproducing the
+   server's config read on a machine that has a `.env`. That opt-out had to be a new variable
+   rather than `EXPO_NO_DOTENV`, because EAS CLI sets `EXPO_NO_DOTENV` on every invocation and
+   honouring it there is the bug the dotenv loader exists to fix.
+
+Both gates run in CI **and** as a preflight inside `pnpm run eas:build:preview` and
+`pnpm run eas:update`. Reverting the `eas.json` fix makes both fail, naming all five variables,
+in about a second.
+
+The secret scan was widened at the same time to catch `sb_secret_`, since a Supabase project
+presents the publishable and secret keys side by side and the secret one bypasses every RLS
+policy in the schema.
+
 ### Still open
 
 The exit criterion — _"an invited tester can authenticate and resume after app restart"_ —

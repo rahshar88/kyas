@@ -7,14 +7,22 @@
     "base": {
       "node": "22.22.2"
     },
-    "development": {
+    "dev-environment": {
       "extends": "base",
+      "env": {
+        "EXPO_PUBLIC_ENVIRONMENT": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yvofvmrsnhddpthzgkep.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_s_SszST7DbCgJG-9j4czVQ_opSSFIhu",
+        "EXPO_PUBLIC_SUPPORT_URL": "https://kyascene.app/support",
+        "EXPO_PUBLIC_PRIVACY_URL": "https://kyascene.app/privacy",
+        "EXPO_PUBLIC_TERMS_URL": "https://kyascene.app/terms"
+      }
+    },
+    "development": {
+      "extends": "dev-environment",
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
-      "env": {
-        "EXPO_PUBLIC_ENVIRONMENT": "development"
-      },
       "ios": {
         "simulator": true
       },
@@ -23,13 +31,10 @@
       }
     },
     "preview": {
-      "extends": "base",
+      "extends": "dev-environment",
       "distribution": "internal",
       "channel": "preview",
       "autoIncrement": true,
-      "env": {
-        "EXPO_PUBLIC_ENVIRONMENT": "development"
-      },
       "ios": {
         "simulator": false
       },

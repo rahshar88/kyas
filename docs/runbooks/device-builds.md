@@ -152,6 +152,24 @@ its job — the native project changed. Build again.
 **The phone does not pick up an update.** Force-close the app (swipe up from the app switcher)
 and reopen. Updates apply on launch, not while running.
 
+**The build fails at "Read app config".** A profile is missing an environment variable. The
+build server has no `.env` — that file is gitignored, so it is not uploaded — which means the
+profile's `env` block in `eas.json` is the entire environment. EAS reports this as
+`Unknown error. See logs of the Read app config build phase`, which names neither the variable
+nor the file; open that phase in the build logs and the real message is there, listing every
+missing key.
+
+You should not hit this: `pnpm run eas:build:preview` runs both verifiers first and refuses to
+queue a build that cannot read its config. To check any profile by hand:
+
+```bash
+node scripts/verify-eas-config.mjs --profile preview
+```
+
+```bash
+node scripts/verify-eas-build-env.mjs --profile preview
+```
+
 **"Project not configured for EAS Update."** `EAS_PROJECT_ID` is empty in `app.config.ts`. In
 this repository it is committed, so this should not happen — check you have not set an empty
 `EAS_PROJECT_ID` in your shell or in `apps/mobile/.env`, which overrides the committed value.
