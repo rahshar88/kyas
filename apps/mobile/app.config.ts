@@ -1,8 +1,46 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 // `env.config.js` is CommonJS on purpose: @expo/config transpiles ONLY this file before
 // requiring it, so a relative import of a .ts module fails to resolve. See env.config.js.
 import { parseEnv, type AppEnvironment } from './env.config';
+
+/**
+ * Loads `.env` when something upstream has not.
+ *
+ * Expo's CLI reads `.env` automatically; EAS CLI does not — it sets `EXPO_NO_DOTENV=1` so
+ * build environments come from `eas.json` profiles rather than a developer's local file.
+ * That is right for a build, but it also applies when EAS merely *reads* the config, as
+ * `eas init` does, so validation failed on a machine where `.env` was sitting right there.
+ * EAS reports that as `expo/bin/cli config --json exited with non-zero code: 1` — an exit
+ * code with no error text, from a command the developer never typed.
+ *
+ * This lives in app.config.ts rather than env.config.js because env.config.js is also
+ * bundled into the React Native app, where `node:fs` cannot be resolved at all.
+ *
+ * Anything already in the environment wins, so `eas.json` profiles, CI and shell overrides
+ * stay authoritative — this only fills gaps. On EAS Build servers there is no `.env` (it is
+ * gitignored), so it is a no-op and the profile supplies everything. A genuinely missing
+ * variable still fails the build, which is the point of ADR-0003.
+ */
+function loadDotEnv(): void {
+  const envPath = join(__dirname, '.env');
+  if (!existsSync(envPath)) return;
+
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (match?.[1] === undefined) continue;
+    if (process.env[match[1]] !== undefined) continue;
+
+    // Strip one layer of matching quotes, the way dotenv does.
+    const raw = (match[2] ?? '').trim();
+    process.env[match[1]] = /^(['"]).*\1$/.test(raw) ? raw.slice(1, -1) : raw;
+  }
+}
+
+loadDotEnv();
 
 // Validates at config time. A missing or malformed variable fails `expo config`,
 // `expo prebuild`, `expo export` and every EAS build — loudly, before a tester sees it.

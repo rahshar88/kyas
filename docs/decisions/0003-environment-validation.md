@@ -54,6 +54,24 @@ refactor it into a loop.
 | No personal data in analytics             | the `AnalyticsProperties` type — a PII property is a compile error                                                                           |
 | Secrets anywhere in the repo              | gitleaks in the `security` CI job                                                                                                            |
 
+### EAS CLI suppresses `.env`, so app.config.ts loads it
+
+EAS CLI sets `EXPO_NO_DOTENV=1` so build environments come from `eas.json` profiles rather
+than a developer's local file. That is right for a build — but it also applies when EAS
+merely _reads_ the config, as `eas init` does, and validation then failed on a machine where
+`.env` was sitting right there. EAS reports it as
+`expo/bin/cli config --json exited with non-zero code: 1`: an exit code with no error text,
+from a command the developer never typed.
+
+`app.config.ts` therefore loads `.env` itself, filling only gaps — anything already in the
+environment wins, so profiles, CI and shell overrides stay authoritative, and on EAS Build
+servers (where `.env` is gitignored and absent) it is a no-op.
+
+This lives in `app.config.ts`, **not** `env.config.js`, and that placement is load-bearing:
+`env.config.js` is also bundled into the React Native app, where `node:fs` cannot be resolved.
+Putting it there broke the Metro bundle immediately — caught by the `bundle` CI job, which is
+exactly the class of failure that job exists to catch.
+
 ## Consequences
 
 - A fresh clone fails fast with an actionable message rather than starting and misbehaving.
