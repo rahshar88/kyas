@@ -29,15 +29,33 @@ so do not take them from anywhere else, including this document.
 Pick the region closest to your users when asked. There is no Sydney region; the choice affects
 latency by milliseconds and nothing else that matters here.
 
-## 3. Add the records at Namecheap
+## 3. Add the records — first, find out where DNS actually lives
 
-`kyascene.app` is registered with Namecheap and currently parked.
+A domain's records are served by whichever **nameservers** the registrar points at. Adding
+records anywhere else has no effect at all, and nothing warns you: the records sit in a
+dashboard looking correct while the world asks a different server.
+
+Check before touching anything:
+
+```bash
+curl -s "https://dns.google/resolve?name=kyascene.app&type=NS" | grep -o '"data": "[^"]*"'
+```
+
+| What comes back                   | Where DNS is | Where to add records |
+| --------------------------------- | ------------ | -------------------- |
+| `dns1/dns2.registrar-servers.com` | Namecheap    | Namecheap            |
+| `*.ns.cloudflare.com`             | Cloudflare   | Cloudflare           |
+
+As of 13 August 2026 `kyascene.app` answers with **Namecheap**. A Cloudflare zone for it would
+show "Pending nameserver update" and its records would be inert.
+
+### If DNS is at Namecheap
 
 **Domain List → Manage → Advanced DNS → Add New Record.**
 
-The one thing that catches everyone: **Namecheap's "Host" field takes only the subdomain part,
-not the full name.** Resend shows you `send.kyascene.app`; Namecheap wants `send`. Pasting the
-full domain creates `send.kyascene.app.kyascene.app`, which silently never verifies.
+The thing that catches everyone: **Namecheap's "Host" field takes only the subdomain part, not
+the full name.** Resend shows `send.kyascene.app`; Namecheap wants `send`. Pasting the full
+domain creates `send.kyascene.app.kyascene.app`, which silently never verifies.
 
 | Resend shows                     | Namecheap Type | Namecheap Host      |
 | -------------------------------- | -------------- | ------------------- |
@@ -48,11 +66,29 @@ full domain creates `send.kyascene.app.kyascene.app`, which silently never verif
 Set TTL to Automatic. The MX record has a separate Priority field — use the number Resend
 gives, usually 10.
 
-Leave the existing parking records alone. Mail records and web records do not conflict.
+Leave the existing parking records alone. Mail and web records do not conflict.
 
-Back in Resend, press **Verify**. It usually completes in a few minutes. If it does not, wait
-and press it again rather than editing anything — Namecheap's propagation is the usual cause,
-not a wrong record.
+### If DNS is at Cloudflare
+
+**Websites → kyascene.app → DNS → Records → Add record.**
+
+Cloudflare is more forgiving about names — it accepts `send` or the full `send.kyascene.app`
+and normalises either. Two Cloudflare-specific things instead:
+
+- **Proxy status must be DNS only (grey cloud)** on anything mail-related. Proxying rewrites
+  the answer, so a proxied record fails verification and mail stops. MX and TXT cannot be
+  proxied at all, so this only bites if Resend asks for a CNAME.
+- **Turn off DNSSEC only if Resend asks.** It normally does not; leave it alone otherwise.
+
+### Moving kyascene.app to Cloudflare
+
+Worth doing if you already run other domains there, but note the order: Cloudflare gives you
+two nameservers, and **you change them at Namecheap** — so this does not avoid needing the
+Namecheap panel, it just moves where you work afterwards. Allow a few hours for propagation,
+during which mail may be verified against either provider.
+
+Back in Resend, press **Verify**. It usually completes in minutes. If it does not, wait and
+press again rather than editing — propagation is the usual cause, not a wrong record.
 
 ## 4. Create the API key
 
@@ -137,9 +173,16 @@ into something you can answer instead of guess.
 enabled and saved. Confirm step 5 took effect, then raise the ceiling under
 **Authentication → Rate Limits**, which only becomes editable with custom SMTP configured.
 
-**Domain will not verify.** Almost always the Namecheap Host field containing the full domain
-instead of the subdomain. Check for a record literally named
-`send.kyascene.app.kyascene.app`.
+**Domain will not verify.** Two usual causes, in order of likelihood:
+
+1. **The records are in the wrong dashboard.** Adding them to a Cloudflare zone whose
+   nameservers still point at Namecheap — or the reverse — leaves them inert while looking
+   perfectly correct. Re-run the `dig`/`curl` check in step 3.
+2. **Namecheap's Host field contains the full domain.** Look for a record literally named
+   `send.kyascene.app.kyascene.app`.
+
+On Cloudflare, also check the proxy status is **DNS only** (grey cloud) on any CNAME Resend
+asked for.
 
 **Email arrives with a button and no digits.** The template edit did not save, or you edited
 only one of the two. Check both.
