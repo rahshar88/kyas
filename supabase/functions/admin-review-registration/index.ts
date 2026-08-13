@@ -17,7 +17,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { failure, preflight, requestId, success } from '../_shared/response.ts';
 
 type ReviewOutcome =
-  'approved' | 'rejected' | 'not_permitted' | 'no_pending_request' | 'invalid_request';
+  | 'approved'
+  | 'rejected'
+  | 'not_permitted'
+  | 'own_registration'
+  | 'no_pending_request'
+  | 'invalid_request';
 
 const REJECTION_CATEGORIES = [
   'not_eligible',
@@ -118,10 +123,26 @@ Deno.serve(async (request: Request): Promise<Response> => {
     case 'invalid_request':
       return failure('VALIDATION_FAILED', 'That decision could not be recorded.', { id });
 
+    /**
+     * Separated from `not_permitted` after the founder — the only operator, reviewing the
+     * first registration in the system — was told they lacked authority they demonstrably
+     * had, by a console they were signed into, under an error code claiming their session had
+     * ended. Three false statements in one message.
+     *
+     * The original reason for sharing a value was that distinguishing them would tell an
+     * unauthorised caller whether they hold admin rights. That does not survive reading the
+     * function: `is_admin` is checked first, so this outcome is reachable only by a confirmed
+     * operator, about themselves. VALIDATION_FAILED rather than SESSION_EXPIRED, because
+     * nothing is wrong with the session and the console must not sign them out over it.
+     */
+    case 'own_registration':
+      return failure(
+        'VALIDATION_FAILED',
+        'You cannot review your own registration — another operator has to.',
+        { id },
+      );
+
     case 'not_permitted':
-      // Also covers an operator reviewing their own registration. One message, because
-      // distinguishing "you are not an admin" from "you cannot review yourself" tells an
-      // unauthorised caller whether they hold admin rights.
       return failure('SESSION_EXPIRED', 'You do not have permission to do that.', { id });
   }
 });

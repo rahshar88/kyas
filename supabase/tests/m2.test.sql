@@ -556,8 +556,26 @@ begin
     true, 'approving myself'
   );
   perform pg_temp.assert(
-    outcome = 'not_permitted',
+    outcome = 'own_registration',
     'an operator cannot review their own registration'
+  );
+
+  /**
+   * And the refusal must be distinguishable from "you are not an operator".
+   *
+   * Both used to return `not_permitted`, so the console told the founder — the only operator
+   * in the system, reviewing the first registration in it — that they lacked authority they
+   * demonstrably had. Sharing one value looked like prudent non-disclosure; it was reachable
+   * only by a confirmed operator asking about themselves, so it disclosed nothing and cost an
+   * hour of doubting the sign-in instead of the rule.
+   */
+  perform pg_temp.assert(
+    public.admin_review_registration(
+      'aaaaaaaa-0000-0000-0000-000000000001',
+      'cccccccc-0000-0000-0000-000000000003',
+      true, 'not an operator at all'
+    ) = 'not_permitted',
+    'a non-operator is still refused without being told which rule stopped them'
   );
 end
 $$;
