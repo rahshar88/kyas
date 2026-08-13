@@ -39,7 +39,7 @@ export function VerifyEmailScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { signInWithCode, requestCode } = useAuth();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, notSent } = useLocalSearchParams<{ email: string; notSent?: string }>();
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | undefined>();
@@ -151,6 +151,17 @@ export function VerifyEmailScreen() {
           editable={!submitting}
           testID="verify-code"
         />
+
+        {notSent === '1' ? (
+          <Text
+            style={[typography.caption, { color: theme.cautionText }]}
+            accessibilityRole="alert"
+            testID="verify-not-sent"
+          >
+            We couldn&apos;t send a new code just now — too many requests. If you already have one,
+            it is still good for an hour. Enter it below.
+          </Text>
+        ) : null}
 
         <Text style={[typography.caption, { color: theme.textSecondary }]}>
           {/* Deliberately no duration. Supabase's code lifetime is a server setting, and

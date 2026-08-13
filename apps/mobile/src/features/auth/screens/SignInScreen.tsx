@@ -54,6 +54,26 @@ export function SignInScreen() {
       // The normalised address travels forward, so S03 verifies exactly what was sent.
       router.push({ pathname: '/(public)/verify-email', params: { email: parsed.data } });
     } catch (caught) {
+      /**
+       * A rate limit must not trap someone who already has a code.
+       *
+       * Failing to *send* a new code says nothing about whether an earlier one is still
+       * valid — and they last an hour. Refusing to advance meant a tester holding a perfectly
+       * good code had no route to the screen that accepts it: the only way in was a
+       * successful send. That is a dead end for the ordinary case of requesting a code,
+       * closing the app, and coming back.
+       *
+       * So a rate limit advances anyway, and S03 explains that no new code was sent. Every
+       * other failure still stops here, because those genuinely mean no code exists.
+       */
+      if (isAppError(caught) && caught.code === 'RATE_LIMITED') {
+        router.push({
+          pathname: '/(public)/verify-email',
+          params: { email: parsed.data, notSent: '1' },
+        });
+        return;
+      }
+
       setError(isAppError(caught) ? APP_ERROR_MESSAGES[caught.code] : APP_ERROR_MESSAGES.UNKNOWN);
     } finally {
       setSubmitting(false);
