@@ -10,9 +10,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/config/env';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { installGlobalErrorHandler } from '@/services/error-reporting';
 
 // S00 hides the splash itself once session restoration settles or times out.
 void SplashScreen.preventAutoHideAsync();
+
+// Before the first render, so a crash during startup is still captured. Without this a fatal
+// error closes the app leaving no record anywhere — the report a tester describes as
+// "it just shut", and the one an external tester will never reproduce on request.
+installGlobalErrorHandler();
 
 /**
  * Provider order matters: QueryProvider is outermost because AuthProvider's status lookup

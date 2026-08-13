@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
-  "description": "KyaScene mobile app — Expo SDK 57 / React Native. iOS first, Android second.",
+  "description": "KyaScene mobile app \u2014 Expo SDK 57 / React Native. iOS first, Android second.",
   "scripts": {
     "start": "expo start",
     "ios": "expo run:ios",
@@ -23,6 +23,7 @@
     "@kyascene/analytics": "workspace:*",
     "@kyascene/contracts": "workspace:*",
     "@kyascene/domain": "workspace:*",
+    "@kyascene/observability": "workspace:*",
     "@kyascene/ui": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.112.2",
