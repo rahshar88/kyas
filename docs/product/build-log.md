@@ -277,6 +277,7 @@ lockdown, an invite code minted, and a run through the flow on a device.
 | [ADRs](../decisions/README.md)                        | Stack, monorepo, environment validation, and the §22 founder list |
 | [First run on a Mac](../runbooks/first-run-on-mac.md) | Xcode, CocoaPods, simulator, real iPhone                          |
 | [Supabase setup](../runbooks/supabase-setup.md)       | Creating a project, keys, invite codes                            |
+| [Email delivery](../runbooks/email-delivery.md)       | Resend, DNS, templates — the only way sign-in codes arrive        |
 | [Device builds and OTA](../runbooks/device-builds.md) | Untethered install, updates without a cable                       |
 | [CI](../runbooks/ci.md)                               | What each job proves, and the audit allow-list                    |
 | [Local development](../runbooks/local-development.md) | Day-to-day commands and common failures                           |

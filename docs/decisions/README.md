@@ -9,6 +9,7 @@ Record."_
 | [0002](0002-monorepo-and-tooling.md)   | Monorepo layout, pnpm hoisting and config placement | accepted |
 | [0003](0003-environment-validation.md) | Environment configuration and fail-loud validation  | accepted |
 | [0004](0004-eas-project-ownership.md)  | EAS project ownership and untethered distribution   | accepted |
+| [0005](0005-transactional-email.md)    | Transactional email provider (Resend)               | accepted |
 
 ## Decisions the coding agent may NOT make alone (§22)
 
@@ -21,7 +22,9 @@ The agent may prepare recommendations, but the founder decides:
 - Privacy-policy and retention wording
 - Whether student verification requires documents
 - Social-login providers
-- Analytics and error-reporting vendors, if they process personal data
+- Analytics and error-reporting vendors, if they process personal data — the **email**
+  provider is decided in [ADR-0005](0005-transactional-email.md); analytics and crash
+  reporting remain open
 - Notification campaigns
 - Premium pricing and entitlements
 - Business advertising categories
