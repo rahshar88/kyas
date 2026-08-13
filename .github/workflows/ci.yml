@@ -42,6 +42,9 @@ jobs:
       - run: pnpm run test
         env:
           EXPO_PUBLIC_ENVIRONMENT: development
+      - name: Consent policy version is consistent across app, function and SQL
+        run: node scripts/verify-consent-version.mjs
+
       - name: eas.json structure and secret scan
         run: node scripts/verify-eas-config.mjs
 

@@ -15,6 +15,17 @@ export {
   type RegistrationDraft,
   type RegistrationStep,
 } from './draft';
+export {
+  CONSENT_LABELS,
+  CURRENT_POLICY_VERSION,
+  OPTIONAL_CONSENTS,
+  REQUIRED_CONSENTS,
+  hasAllRequiredConsents,
+  type ConsentChoice,
+  type ConsentPolicyType,
+  type OptionalConsent,
+  type RequiredConsent,
+} from './consent';
 export { APP_ERROR_MESSAGES, AppError, isAppError, type AppErrorCode } from './errors';
 export {
   DEFAULT_FEATURE_FLAGS,

@@ -195,14 +195,16 @@ create table public.profile_goals (
   primary key (user_id, goal_code),
   constraint profile_goals_rank_range check (rank between 1 and 5),
   constraint profile_goals_rank_unique unique (user_id, rank)
-    deferrable initially deferred
+    deferrable initially immediate
 );
 
 create index profile_goals_user_idx on public.profile_goals (user_id);
 
 comment on constraint profile_goals_rank_unique on public.profile_goals is
-  'Deferrable so a reorder can swap two ranks inside one transaction without a temporary
-   collision. Still enforced at commit.';
+  'DEFERRABLE INITIALLY IMMEDIATE, deliberately. Immediate so an ordinary bad write fails on
+   the statement that caused it rather than at commit, where the error names a constraint
+   instead of a row. Deferrable so a transaction that genuinely needs to swap two ranks can
+   opt in with SET CONSTRAINTS ... DEFERRED — the rare case pays the cost, not every write.';
 
 -- ------------------------------------------------------------ S10 opt-out
 

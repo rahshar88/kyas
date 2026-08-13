@@ -220,7 +220,7 @@ create trigger admin_audit_logs_no_delete
   before delete on public.admin_audit_logs
   for each row execute function public.admin_audit_logs_are_append_only();
 
--- ------------------------------------------------------------ anon lockdown
+-- ------------------------------------------------------------ role lockdown
 
 -- Re-asserted for the tables this migration adds. `alter default privileges` in
 -- 20260808000400 should already cover them, but that only applies to objects created by the
@@ -228,3 +228,50 @@ create trigger admin_audit_logs_no_delete
 revoke all on all tables in schema public from anon;
 revoke all on all sequences in schema public from anon;
 revoke all on all functions in schema public from anon;
+
+/**
+ * The same treatment for `authenticated`, which 20260808000400 revoked **once** rather than by
+ * default. Every table created after it — including all eleven added here — therefore received
+ * Supabase's default grant again.
+ *
+ * The visible symptom was mild and the underlying state was not: `select` on `admin_users`
+ * returned zero rows rather than a permission error, because RLS was doing the whole job
+ * alone. §13.1 asks for both — grants decide whether a table is reachable, policies decide
+ * which rows — and a future table shipped without a policy would have been readable by every
+ * signed-in user.
+ *
+ * Found by the Milestone 2 test asserting the admin tables are unreachable. It is the same
+ * failure as the anonymous-role one in Milestone 1, and it recurred for the same reason: a
+ * one-time revoke does not constrain the future.
+ */
+revoke all on all tables in schema public from authenticated;
+
+alter default privileges in schema public revoke all on tables from authenticated;
+alter default privileges in schema public revoke all on sequences from authenticated;
+
+-- Restated, because the blanket revoke above removed them too. From here on a table is
+-- unreachable to clients until it is named, which is the correct default: a forgotten grant
+-- breaks a feature loudly, a forgotten revoke leaks data quietly.
+grant usage on schema public to authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select, insert, update on public.student_profiles to authenticated;
+grant select on public.invite_redemptions to authenticated;
+grant select on public.india_states to authenticated;
+grant select on public.education_providers to authenticated;
+
+grant select on public.languages to authenticated;
+grant select on public.communities to authenticated;
+grant select on public.interests to authenticated;
+grant select on public.goals to authenticated;
+
+grant select, insert, delete on public.profile_languages to authenticated;
+grant select, insert, delete on public.profile_communities to authenticated;
+grant select, insert, delete on public.profile_interests to authenticated;
+grant select, insert, update, delete on public.profile_goals to authenticated;
+
+grant select, insert, update on public.profile_visibility to authenticated;
+grant select, insert on public.consents to authenticated;
+grant select on public.verification_requests to authenticated;
+
+-- admin_users and admin_audit_logs are deliberately absent: no client role reaches them at
+-- all (§15.2). The admin console goes through Edge Functions holding the service role.

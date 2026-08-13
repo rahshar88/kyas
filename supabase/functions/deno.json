@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2"
   },
   "tasks": {
-    "check": "deno check redeem-invite/index.ts _shared/invite-code.ts _shared/response.ts"
-  }
+    "check": "deno check **/*.ts"
+  },
+  "//check": "Glob, not a hand-written list: the previous explicit list silently omitted submit-registration and admin-review-registration when they were added, so neither was type-checked at all."
 }
