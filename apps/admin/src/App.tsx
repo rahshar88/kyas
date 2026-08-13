@@ -26,7 +26,7 @@ type Tab = 'queue' | 'search' | 'audit';
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [access, setAccess] = useState<'unknown' | 'operator' | 'denied' | 'failed'>('unknown');
   const [tab, setTab] = useState<Tab>('queue');
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -40,7 +40,7 @@ export function App() {
       setSession(next);
       // Clears on sign-out so the next person to sign in is re-checked rather than inheriting
       // the previous answer.
-      if (next === null) setIsAdmin(null);
+      if (next === null) setAccess('unknown');
     });
 
     return () => listener.subscription.unsubscribe();
@@ -50,12 +50,20 @@ export function App() {
     if (session === null) return;
 
     let cancelled = false;
+
+    /**
+     * A failed check and a refused one are different answers.
+     *
+     * Both used to render "this account is not an operator", which sent someone to look at
+     * `admin_users` when the actual problem was an Edge Function that was not deployed or
+     * could not reach the database. The row was right; the message was pointing at it anyway.
+     */
     void adminCall<{ isAdmin: boolean }>({ action: 'whoami' })
       .then((result) => {
-        if (!cancelled) setIsAdmin(result.isAdmin);
+        if (!cancelled) setAccess(result.isAdmin ? 'operator' : 'denied');
       })
       .catch(() => {
-        if (!cancelled) setIsAdmin(false);
+        if (!cancelled) setAccess('failed');
       });
 
     return () => {
@@ -78,13 +86,17 @@ export function App() {
   if (!ready) return <div className="layout muted">Loading…</div>;
   if (session === null) return <SignIn />;
 
-  if (isAdmin === null) return <div className="layout muted">Checking access…</div>;
+  if (access === 'unknown') return <div className="layout muted">Checking access…</div>;
 
-  if (!isAdmin) {
+  if (access !== 'operator') {
     return (
-      <div className="layout" style={{ maxWidth: 420, paddingTop: 80 }}>
-        <h1>No access</h1>
-        <p className="muted">This account is not an operator.</p>
+      <div className="layout" style={{ maxWidth: 520, paddingTop: 80 }}>
+        <h1>{access === 'denied' ? 'No access' : 'Could not check access'}</h1>
+        <p className="muted">
+          {access === 'denied'
+            ? 'This account is signed in but is not an operator. Someone with database access has to add a row to admin_users — the console cannot grant it.'
+            : 'The admin-console Edge Function did not answer. It may not be deployed to this project, or its credentials may be stale after a key rotation. Run: pnpm run supabase:deploy <project-ref>'}
+        </p>
         <button onClick={() => void supabase.auth.signOut()}>Sign out</button>
       </div>
     );
