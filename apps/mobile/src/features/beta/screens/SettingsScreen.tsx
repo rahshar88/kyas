@@ -12,6 +12,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { env } from '@/config/env';
@@ -59,6 +60,30 @@ export function SettingsScreen() {
   });
 
   const open = (url: string) => () => void Linking.openURL(url);
+
+  /**
+   * Which JavaScript this phone is actually running.
+   *
+   * Two multi-day debugging rounds in this project came down to a device silently running an
+   * old bundle while everyone reasoned about the new one — updates published for a runtime no
+   * binary had, then a reinstall reverting to an embedded bundle mid-diagnosis. "Force-close
+   * and hope" is not a verification step. This line is: read it, compare it to the update id
+   * the publish printed, done.
+   *
+   * `updateId` is null when running the bundle embedded at build time, which is its own
+   * answer. The date is ISO-sliced rather than locale-formatted on purpose — Hermes' Intl
+   * support is exactly the kind of assumption that cost a day here already.
+   */
+  const updateLabel = (() => {
+    try {
+      if (Updates.updateId == null) return 'embedded bundle';
+      const published =
+        Updates.createdAt == null ? '' : ` · ${Updates.createdAt.toISOString().slice(0, 16)}Z`;
+      return `update ${Updates.updateId.slice(0, 8)}${published}`;
+    } catch {
+      return 'embedded bundle';
+    }
+  })();
 
   const sections: { title: string; rows: Row[] }[] = [
     {
@@ -181,7 +206,8 @@ export function SettingsScreen() {
           style={[typography.caption, { color: theme.textSecondary }]}
           testID="settings-version"
         >
-          KyaScene {Constants.expoConfig?.version ?? '—'} ({env.EXPO_PUBLIC_ENVIRONMENT})
+          KyaScene {Constants.expoConfig?.version ?? '—'} ({env.EXPO_PUBLIC_ENVIRONMENT}) —{' '}
+          {updateLabel}
         </Text>
       </View>
 
