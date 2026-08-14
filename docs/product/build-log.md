@@ -597,6 +597,69 @@ Neither was findable by the test suite as written. The first needed a surface no
 the second needed reading the specification against the screen rather than against the
 component.
 
+### The launch-crash day, 14 August — three wrong diagnoses and what was actually true
+
+The most expensive debugging session of the project so far, recorded in full because every
+mistake in it is a pattern worth never repeating.
+
+**The symptom:** after an over-the-air update, the app opened and closed instantly. No message,
+nothing to screenshot. A fresh build did the same. The tester could only report "it opens and
+shuts" — a sentence compatible with every possible cause.
+
+**Wrong diagnosis one: a missing environment.** Plausible — `env.ts` throws at module scope —
+and testable, so testing it found something real but unrelated: **Metro's transform cache
+serves stale `EXPO_PUBLIC_*` values.** An export with CI placeholders followed by an export
+with real values produced a bundle still containing `https://ci-placeholder.supabase.co`,
+every tool reporting success. Real bug, worth the two gates it produced
+(`verify-update-bundle.mjs` greps the actual bundle; `eas-update.mjs` passes `--clear-cache`)
+— but not this crash.
+
+**Wrong diagnosis two: `Intl.Segmenter`.** Also real: Hermes does not implement it, Node does,
+so 514 tests passed while the device crashed rendering the first avatar with a real name. It
+hid behind an early return — every test account had a null `display_name`, so the line was
+unreachable and the app "worked". Fixed with feature detection, tested by deleting the API
+from the Jest environment, gated by `verify-hermes-support.mjs`. **Device-confirmed fixed**:
+the beta home now renders "Hi Rah" through the fallback path and survives a cold start —
+the exact scenario that crashed build 8. But nulling the name had not stopped the crash, so
+this was not the whole story either.
+
+**What the crash log actually said.** The `.ips` file named the faulting thread:
+`expo.controller.errorRecoveryQueue`, SIGABRT, 0.78s after launch. That is **expo-updates'
+error recovery, which aborts the process itself when the JavaScript fails to load at
+startup** — the reason no in-app error screen could ever have appeared. React never existed.
+
+**The cause:** between the build that booted and the one that did not, the only launch-path
+change was `_layout.tsx` being restructured twice _during the diagnosis itself_ — an env
+try/catch via `require()`, a stored-crash reader, an error boundary — added to the most
+fragile file in the app without once being run on a device. The fix was subtraction: restore
+`_layout.tsx` to the last version known to boot, byte for byte. It booted.
+
+**What this bought, besides the bruises:**
+
+- Fatal errors are now written to storage as they happen (`crash-log.ts`, storage loaded
+  lazily so the recorder cannot itself contribute to a startup failure) — so "it opens and
+  shuts" becomes a readable message on the next launch, once the display screens are re-wired.
+- `ConfigurationErrorScreen`, `LastCrashScreen` and `RootErrorBoundary` exist and are unwired.
+  They go back in **one at a time, each verified on a device** — the opposite of how they
+  went in.
+- Three verification gates that did not exist that morning: update bundles are grepped for
+  their configuration before publishing, Hermes-unsupported APIs fail CI, and the Metro cache
+  is cleared on every publish.
+
+**The lesson, stated once:** the launch path is not a place to add code while debugging the
+launch path. And a crash log from the device was worth more than three days of reasoning from
+diffs — it should always be the first ask, not the last.
+
+### Confirmed working on device, 14 August (evening)
+
+The full Milestone 3 surface, on a real iPhone over a real network: beta home greeting by
+name with the avatar initial, ranked goals, the empty announcements state, feature voting with
+"Coming soon" labels and vote state surviving refresh, **referral issuance** (first mint
+through `ensure-referral-invite` — code shown, 3 of 3 seats), the light-mode `accentText`
+palette, and push registration storing a token. A second tester is being onboarded via
+`device:create` to exercise redemption, the count display, and console review of a
+registration that is not the operator's own.
+
 ### Still open — and four of these are blockers
 
 1. **Live privacy, terms and support URLs.** §16.4 makes a missing privacy link a ship blocker
