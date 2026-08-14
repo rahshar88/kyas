@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scrubError, scrubText } from '@kyascene/observability';
 
 /**
@@ -21,6 +20,18 @@ import { scrubError, scrubText } from '@kyascene/observability';
  */
 const KEY = 'kyascene.lastFatal.v1';
 
+/**
+ * Loaded on first use rather than at module scope.
+ *
+ * This module is reached from the root layout's import graph, and anything evaluated there
+ * runs before React exists — where a failure is a native abort with no message. Nothing that
+ * only matters *after* something has gone wrong should be able to contribute to going wrong.
+ */
+async function storage() {
+  const module_ = await import('@react-native-async-storage/async-storage');
+  return module_.default;
+}
+
 export interface StoredCrash {
   message: string;
   stack: string | undefined;
@@ -40,12 +51,14 @@ export function recordFatal(error: unknown, at: string): void {
     at,
   };
 
-  void AsyncStorage.setItem(KEY, JSON.stringify(payload)).catch(() => undefined);
+  void storage()
+    .then((store) => store.setItem(KEY, JSON.stringify(payload)))
+    .catch(() => undefined);
 }
 
 export async function readLastFatal(): Promise<StoredCrash | null> {
   try {
-    const raw = await AsyncStorage.getItem(KEY);
+    const raw = await (await storage()).getItem(KEY);
     if (raw === null) return null;
     return JSON.parse(raw) as StoredCrash;
   } catch {
@@ -55,5 +68,5 @@ export async function readLastFatal(): Promise<StoredCrash | null> {
 }
 
 export async function clearLastFatal(): Promise<void> {
-  await AsyncStorage.removeItem(KEY).catch(() => undefined);
+  await (await storage()).removeItem(KEY).catch(() => undefined);
 }
