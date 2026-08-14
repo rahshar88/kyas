@@ -9,15 +9,18 @@ import {
   typography,
   useTheme,
 } from '@kyascene/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { env } from '@/config/env';
 import { useAuth } from '@/providers/AuthProvider';
 import { profileRepository } from '@/repositories/profile-repository';
 import { registrationRepository } from '@/repositories/registration-repository';
+import { avatarService } from '@/services/avatar';
 import { bundleIdentity } from '@/services/build-identity';
 
 /**
@@ -43,6 +46,7 @@ interface Row {
 export function SettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { session, signOut } = useAuth();
   const userId = session?.userId;
 
@@ -58,6 +62,48 @@ export function SettingsScreen() {
     queryFn: () => profileRepository.avatarUrl(avatarPath!),
     enabled: avatarPath !== null,
   });
+
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoState, setPhotoState] = useState<'denied' | 'failed' | 'saved' | undefined>();
+  /** The original throw from a failed upload, for DiagnosticDetail on internal builds. */
+  const [photoCause, setPhotoCause] = useState<unknown>();
+
+  /**
+   * Pick → upload, in one gesture, right here.
+   *
+   * The registration flow uploads the photo when S16 is submitted — correct for onboarding,
+   * useless afterwards: an approved member's only route back to S16 was "Edit your answers",
+   * five screens deep, ending at a Submit button for a registration that is already in. Two
+   * real people failed to find it. A photo is a settings-shaped change, so it lives here and
+   * saves the moment it is chosen, with nothing else to press.
+   */
+  const changePhoto = async () => {
+    if (userId === undefined || photoBusy) return;
+    setPhotoState(undefined);
+    setPhotoCause(undefined);
+
+    const picked = await avatarService.pick('library');
+    if (picked.status === 'cancelled') return;
+    if (picked.status === 'permission_denied') {
+      setPhotoState('denied');
+      return;
+    }
+
+    setPhotoBusy(true);
+    try {
+      await profileRepository.uploadAvatar(userId, picked.uri);
+      // The path is stable but the object behind it changed; refetching mints a fresh signed
+      // URL, whose new token is what makes the Image component actually reload.
+      await queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      await queryClient.invalidateQueries({ queryKey: ['avatar-url'] });
+      setPhotoState('saved');
+    } catch (caught) {
+      setPhotoState('failed');
+      setPhotoCause(caught);
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
 
   const open = (url: string) => () => void Linking.openURL(url);
 
@@ -140,7 +186,48 @@ export function SettingsScreen() {
               {session?.email ?? ''}
             </Text>
           </View>
+          <TextButton
+            label={
+              photoBusy ? 'Saving…' : avatarPath === null ? 'Add a photo' : 'Change photo'
+            }
+            onPress={() => void changePhoto()}
+            disabled={photoBusy}
+            testID="settings-change-photo"
+          />
         </View>
+
+        {photoState === 'saved' ? (
+          <Text
+            style={[typography.caption, { color: theme.textSecondary }]}
+            accessibilityRole="alert"
+            testID="settings-photo-saved"
+          >
+            Photo saved. It can take a moment to show everywhere.
+          </Text>
+        ) : null}
+
+        {photoState === 'denied' ? (
+          <View accessibilityRole="alert" testID="settings-photo-denied" style={styles.notice}>
+            <Text style={[typography.caption, { color: theme.cautionText }]}>
+              KyaScene does not have access to your photos. Turn it on in your phone&apos;s
+              Settings, then try again.
+            </Text>
+            <TextButton
+              label="Open phone Settings"
+              onPress={() => void Linking.openSettings()}
+              testID="settings-photo-open-settings"
+            />
+          </View>
+        ) : null}
+
+        {photoState === 'failed' ? (
+          <View accessibilityRole="alert" testID="settings-photo-failed" style={styles.notice}>
+            <Text style={[typography.caption, { color: theme.cautionText }]}>
+              Your photo could not be saved. Nothing else was changed — you can try again.
+            </Text>
+            <DiagnosticDetail error={photoCause} testID="settings-photo-diagnostic" />
+          </View>
+        ) : null}
 
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
@@ -206,6 +293,7 @@ const styles = StyleSheet.create({
   body: { gap: spacing.xl, flexGrow: 1 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   identityText: { flex: 1, gap: 2 },
+  notice: { gap: spacing.xs },
   section: { gap: spacing.sm },
   row: {
     gap: 2,

@@ -16,8 +16,8 @@ import { useEffect, useState } from 'react';
 import { Image, Linking, StyleSheet, Text, View } from 'react-native';
 
 import { useDraft } from '@/features/registration/hooks/useDraft';
-import { avatarService } from '@/features/registration/services/avatar';
 import { analytics } from '@/services/analytics';
+import { avatarService } from '@/services/avatar';
 
 /**
  * S13 — Your name and photo.

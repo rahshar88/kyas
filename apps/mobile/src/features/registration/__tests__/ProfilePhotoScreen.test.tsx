@@ -23,7 +23,7 @@ jest.mock('@/features/registration/hooks/useDraft', () => ({
   }),
 }));
 
-jest.mock('@/features/registration/services/avatar', () => ({
+jest.mock('@/services/avatar', () => ({
   avatarService: { pick: (...args: unknown[]) => mockPick(...args) },
 }));
 
