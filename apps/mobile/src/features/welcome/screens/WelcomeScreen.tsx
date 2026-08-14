@@ -16,6 +16,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { env } from '@/config/env';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /** §S01: "Include Connect, Discover and Belong." */
 const PILLARS = [
@@ -101,7 +102,7 @@ export function WelcomeScreen() {
           />
         </View>
 
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

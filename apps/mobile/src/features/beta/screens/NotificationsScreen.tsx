@@ -16,6 +16,7 @@ import { Linking, StyleSheet, Text, View } from 'react-native';
 import { pushService, type PushRegistration } from '@/features/beta/services/push';
 import { useAuth } from '@/providers/AuthProvider';
 import { betaRepository } from '@/repositories/beta-repository';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * Notification preferences — the §S21 item, and the visible half of §21.5's push foundation.
@@ -147,7 +148,7 @@ export function NotificationsScreen() {
           />
         )}
         <TextButton label="Back" onPress={() => router.back()} testID="push-back" />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

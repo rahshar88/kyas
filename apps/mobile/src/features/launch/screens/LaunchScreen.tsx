@@ -19,6 +19,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { draftRepository } from '@/repositories/draft-repository';
 import { registrationRepository } from '@/repositories/registration-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 import { SESSION_RESTORE_TIMEOUT_MS } from '../services/session';
 
@@ -162,7 +163,7 @@ export function LaunchScreen() {
         )}
       </View>
 
-      <PoweredBy1818 />
+      <PoweredBy1818 detail={bundleIdentity} />
     </AppScreen>
   );
 }

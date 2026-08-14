@@ -19,6 +19,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { betaRepository, type FeedbackCategory } from '@/repositories/beta-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S20 — Beta feedback.
@@ -119,7 +120,7 @@ export function FeedbackScreen() {
             onPress={() => router.back()}
             testID="feedback-done"
           />
-          <PoweredBy1818 />
+          <PoweredBy1818 detail={bundleIdentity} />
         </View>
       </AppScreen>
     );
@@ -179,7 +180,7 @@ export function FeedbackScreen() {
           testID="feedback-submit"
         />
         <TextButton label="Not now" onPress={() => router.back()} testID="feedback-cancel" />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

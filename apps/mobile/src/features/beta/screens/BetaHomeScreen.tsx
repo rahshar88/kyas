@@ -23,6 +23,7 @@ import { betaRepository } from '@/repositories/beta-repository';
 import { profileRepository } from '@/repositories/profile-repository';
 import { registrationRepository } from '@/repositories/registration-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S18 — Beta home.
@@ -294,7 +295,7 @@ export function BetaHomeScreen() {
           onPress={() => router.push('/settings')}
           testID="home-settings"
         />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

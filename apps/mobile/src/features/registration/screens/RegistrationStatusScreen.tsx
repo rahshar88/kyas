@@ -22,6 +22,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { profileRepository } from '@/repositories/profile-repository';
 import { registrationRepository } from '@/repositories/registration-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S17 — Registration status.
@@ -186,7 +187,7 @@ export function RegistrationStatusScreen() {
 
         <TextButton label="Refresh" onPress={refresh} testID="status-refresh" />
 
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

@@ -22,6 +22,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { useAuth } from '@/providers/AuthProvider';
+import { bundleIdentity } from '@/services/build-identity';
 
 /** §S03: "resend after countdown". Long enough to discourage hammering the rate limit. */
 const RESEND_COOLDOWN_SECONDS = 45;
@@ -203,7 +204,7 @@ export function VerifyEmailScreen() {
           testID="verify-change-email"
         />
 
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

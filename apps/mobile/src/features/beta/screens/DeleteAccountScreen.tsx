@@ -18,6 +18,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { betaRepository } from '@/repositories/beta-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S22 — Delete account.
@@ -133,7 +134,7 @@ export function DeleteAccountScreen() {
           testID="delete-start"
         />
         <TextButton label="Keep my account" onPress={() => router.back()} testID="delete-cancel" />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
 
       <ConfirmationSheet

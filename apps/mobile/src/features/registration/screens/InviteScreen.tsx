@@ -15,6 +15,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { inviteRepository } from '@/repositories/invite-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S04 — Beta invitation.
@@ -110,7 +111,7 @@ export function InviteScreen() {
           disabled={code.trim() === ''}
           testID="invite-submit"
         />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

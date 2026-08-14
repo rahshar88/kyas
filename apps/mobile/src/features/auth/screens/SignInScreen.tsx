@@ -17,6 +17,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { useAuth } from '@/providers/AuthProvider';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S02 — Email sign-in.
@@ -147,7 +148,7 @@ export function SignInScreen() {
         />
 
         <TextButton label="Back to start" onPress={() => router.back()} testID="sign-in-back" />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );

@@ -18,6 +18,7 @@ import { Share, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { betaRepository } from '@/repositories/beta-repository';
 import { analytics } from '@/services/analytics';
+import { bundleIdentity } from '@/services/build-identity';
 
 /**
  * S19 — Invite friends.
@@ -147,7 +148,7 @@ export function InviteFriendsScreen() {
           disabled={code === undefined}
           testID="invite-copy"
         />
-        <PoweredBy1818 />
+        <PoweredBy1818 detail={bundleIdentity} />
       </View>
     </AppScreen>
   );
