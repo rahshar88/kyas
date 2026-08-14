@@ -52,6 +52,12 @@ jobs:
       - name: Privacy disclosure still describes the database
         run: node scripts/verify-privacy-disclosure.mjs
 
+      # Jest runs on Node, which implements things Hermes does not. A green suite therefore
+      # says nothing about whether an API exists on the device — Intl.Segmenter passed 514
+      # tests and crashed the app on launch.
+      - name: No Hermes-unsupported APIs
+        run: node scripts/verify-hermes-support.mjs
+
       - name: eas.json structure and secret scan
         run: node scripts/verify-eas-config.mjs
 

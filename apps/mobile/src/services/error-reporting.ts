@@ -6,6 +6,7 @@ import {
 } from '@kyascene/observability';
 
 import { appEnvironment } from '@/config/env';
+import { recordFatal } from '@/services/crash-log';
 
 /**
  * The app's single error-reporting entry point (§21 Milestone 4: "crash monitoring").
@@ -61,6 +62,15 @@ export function installGlobalErrorHandler(): void {
     // Scrubbed before it reaches the reporter, and again inside it. Belt and braces on the one
     // surface where a leak would be invisible to review.
     const safe = scrubError(error);
+
+    /**
+     * Written down before anything else, because this is usually the last code that runs.
+     *
+     * With no crash vendor configured (§22) a fatal error otherwise leaves no trace at all —
+     * the process ends and a tester can only report "it opens and shuts". That sentence cost
+     * two wrong diagnoses and a rebuild. The next launch reads this back and shows it.
+     */
+    recordFatal(error, isFatal === true ? 'while starting up' : 'in the background');
 
     errorReporter.captureException(error, { code: safe.name });
     errorReporter.captureMessage(

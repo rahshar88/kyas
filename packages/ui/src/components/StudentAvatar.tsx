@@ -18,19 +18,40 @@ export interface StudentAvatarProps {
  * silhouette says "something is missing", and most people here will have chosen not to add a
  * photo rather than failed to.
  *
- * `Intl.Segmenter` rather than `name[0]`. A JavaScript string index returns a UTF-16 code
- * unit, which splits an emoji in half and — more to the point for KyaScene — takes only the
- * first half of a Devanagari or Gurmukhi grapheme cluster, rendering something that is not a
- * letter in that script. A community app for students from India cannot get initials wrong.
+ * Not `name[0]`. A string index returns a UTF-16 code unit, which splits an emoji in half and
+ * — more to the point for KyaScene — takes only the first half of a Devanagari or Gurmukhi
+ * grapheme cluster, rendering something that is not a letter in that script. A community app
+ * for students from India cannot get initials wrong.
+ *
+ * `Intl.Segmenter` is the correct tool and **is not implemented in Hermes**, which is the
+ * engine this app actually runs on. The first version called it unconditionally, guarded only
+ * by an early return for an empty name — so it was unreachable while every test account had a
+ * null `display_name`, and the app worked. Setting one real name crashed it on launch, and a
+ * rebuild could not fix it because the data had changed, not the code.
+ *
+ * Every unit test passed throughout: Node has `Intl.Segmenter`. The test below deletes it to
+ * make the Jest environment tell the truth about the device.
+ *
+ * So: use it where it exists, and fall back to `Array.from`, which iterates by **code point**.
+ * That still keeps an emoji or a surrogate pair whole, and for Indic scripts it yields the base
+ * consonant without its matra — a correct initial, if not a complete cluster.
  */
+function firstGrapheme(value: string): string {
+  const segmenter = (Intl as { Segmenter?: typeof Intl.Segmenter }).Segmenter;
+
+  if (typeof segmenter === 'function') {
+    const [first] = new segmenter(undefined, { granularity: 'grapheme' }).segment(value);
+    if (first?.segment !== undefined) return first.segment;
+  }
+
+  return Array.from(value)[0] ?? value.slice(0, 1);
+}
+
 function initialOf(displayName: string | null): string {
   const trimmed = displayName?.trim() ?? '';
   if (trimmed === '') return '?';
 
-  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-  const [first] = segmenter.segment(trimmed);
-
-  return (first?.segment ?? trimmed.slice(0, 1)).toLocaleUpperCase();
+  return firstGrapheme(trimmed).toLocaleUpperCase();
 }
 
 export function StudentAvatar({ displayName, uri, size = 48, testID }: StudentAvatarProps) {

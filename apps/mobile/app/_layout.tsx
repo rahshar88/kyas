@@ -1,5 +1,6 @@
 import { colors } from '@kyascene/ui';
 import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,7 +19,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
  */
 import { configurationError } from '@/config/env-status';
 import { ConfigurationErrorScreen } from '@/features/launch/screens/ConfigurationErrorScreen';
+import { LastCrashScreen } from '@/features/launch/screens/LastCrashScreen';
+import { RootErrorBoundary } from '@/features/launch/screens/RootErrorBoundary';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { clearLastFatal, readLastFatal, type StoredCrash } from '@/services/crash-log';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { installGlobalErrorHandler } from '@/services/error-reporting';
 
@@ -35,6 +39,13 @@ installGlobalErrorHandler();
  * goes through a repository that TanStack Query will eventually cache.
  */
 export default function RootLayout() {
+  const [lastCrash, setLastCrash] = useState<StoredCrash | null>(null);
+
+  useEffect(() => {
+    // Read once, after mount, so a storage failure cannot stop the app from starting.
+    void readLastFatal().then(setLastCrash);
+  }, []);
+
   /**
    * Before the providers, because every one of them reads configuration this bundle does not
    * have. Rendering them first would replace a legible message with a second crash.
@@ -44,21 +55,43 @@ export default function RootLayout() {
     return <ConfigurationErrorScreen message={configurationError} />;
   }
 
+  /**
+   * An error that killed a previous launch, shown once.
+   *
+   * A crash during module evaluation or the first render never reaches an error boundary —
+   * the process is gone before one exists. The global handler writes it down instead, and
+   * this is where it surfaces, so "it opens and shuts" becomes something readable.
+   */
+  if (lastCrash !== null) {
+    void SplashScreen.hideAsync();
+    return (
+      <LastCrashScreen
+        crash={lastCrash}
+        onDismiss={() => {
+          void clearLastFatal();
+          setLastCrash(null);
+        }}
+      />
+    );
+  }
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryProvider>
-          <AuthProvider>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: colors.sceneEmerald },
-              }}
-            />
-          </AuthProvider>
-        </QueryProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <RootErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: colors.sceneEmerald },
+                }}
+              />
+            </AuthProvider>
+          </QueryProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </RootErrorBoundary>
   );
 }

@@ -37,6 +37,7 @@
     "verify:consent": "node scripts/verify-consent-version.mjs",
     "verify:privacy": "node scripts/verify-privacy-disclosure.mjs",
     "verify:update": "node scripts/verify-update-bundle.mjs",
+    "verify:hermes": "node scripts/verify-hermes-support.mjs",
     "dev:code": "bash scripts/dev-signin-code.sh",
     "dev:admin": "bash scripts/dev-make-admin.sh",
     "verify:cors": "node scripts/verify-function-cors.mjs"
