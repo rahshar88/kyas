@@ -1,0 +1,17 @@
+{
+  "name": "@kyascene/observability",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vendor-neutral error reporting, with scrubbing that runs before anything leaves the device.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "echo \"tests run from apps/mobile's jest projects\" && exit 0",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@kyascene/config": "workspace:*",
+    "@types/node": "^22.19.0",
+    "@types/jest": "^29.5.14"
+  }
+}

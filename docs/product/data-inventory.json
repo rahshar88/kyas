@@ -1,0 +1,338 @@
+{
+  "$comment": [
+    "Every table and column KyaScene stores, classified. This is the source of truth behind",
+    "the App Store privacy answers and the Play Data Safety form, and it is checked against",
+    "the migrations by scripts/verify-privacy-disclosure.mjs on every pull request.",
+    "",
+    "A new column fails CI until it is classified here. That is deliberate: §18 requires the",
+    "privacy answers to 'match real SDK and data behaviour', and the moment that stops being",
+    "true is a migration adding one column — an ordinary change nothing otherwise connects to a",
+    "form filled in months earlier in App Store Connect.",
+    "",
+    "Classifications:",
+    "  identifier   — links rows to a person; says nothing about them on its own",
+    "  personal     — says something about the person; declarable to Apple and Google",
+    "  sensitive    — personal and higher-risk: free text they wrote, or contact details",
+    "  reference    — catalogue data, identical for everyone, about nobody",
+    "  operational  — timestamps, ordering, server-controlled state",
+    "  credential   — secrets and digests; never leaves the server"
+  ],
+
+  "analyticsProperties": [
+    "screen",
+    "campaignId",
+    "goalCodes",
+    "interestCodes",
+    "outcomeCode",
+    "featureKey",
+    "feedbackCategory",
+    "durationBucket"
+  ],
+
+  "tables": {
+    "profiles": {
+      "purpose": "The public-safe account shell. Status is server-controlled (§11.2).",
+      "columns": {
+        "user_id": "identifier",
+        "display_name": "personal",
+        "avatar_path": "personal",
+        "status": "operational",
+        "onboarding_version": "operational",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "student_profiles": {
+      "purpose": "Private registration detail — study, suburb, Indian background (§S06–§S08). Suburb and postcode only: §13.2 forbids street address or coordinates.",
+      "columns": {
+        "user_id": "identifier",
+        "provider": "personal",
+        "provider_other": "personal",
+        "campus": "personal",
+        "course": "personal",
+        "study_level": "personal",
+        "intake_month": "personal",
+        "intake_year": "personal",
+        "completion_month": "personal",
+        "completion_year": "personal",
+        "student_email": "sensitive",
+        "suburb": "personal",
+        "postcode": "personal",
+        "arrival_status": "personal",
+        "india_state_code": "personal",
+        "hometown": "personal",
+        "communities_not_specified": "personal",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "invites": {
+      "purpose": "The invitation ledger (§S04). Founder and campaign codes are stored as a digest only; referral codes also keep plaintext for their owner — ADR-0006.",
+      "columns": {
+        "id": "identifier",
+        "code_hash": "credential",
+        "code_plain": "credential",
+        "owner_user_id": "identifier",
+        "campaign": "operational",
+        "capacity": "operational",
+        "redeemed_count": "operational",
+        "expires_at": "operational",
+        "status": "operational",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "invite_redemptions": {
+      "purpose": "Which invitation a person used (§S04). One per tester.",
+      "columns": {
+        "id": "identifier",
+        "invite_id": "identifier",
+        "user_id": "identifier",
+        "redeemed_at": "operational"
+      }
+    },
+
+    "profile_languages": {
+      "purpose": "§S09. Languages a student speaks and how well.",
+      "columns": {
+        "user_id": "identifier",
+        "language_code": "personal",
+        "proficiency": "personal",
+        "created_at": "operational"
+      }
+    },
+
+    "profile_communities": {
+      "purpose": "§S10. Cultural communities a student self-identifies with — never inferred.",
+      "columns": {
+        "user_id": "identifier",
+        "community_code": "personal",
+        "created_at": "operational"
+      }
+    },
+
+    "profile_interests": {
+      "purpose": "§S11. Interests, for future discovery.",
+      "columns": {
+        "user_id": "identifier",
+        "interest_code": "personal",
+        "created_at": "operational"
+      }
+    },
+
+    "profile_goals": {
+      "purpose": "§S12. What a student needs first, in their own ranking.",
+      "columns": {
+        "user_id": "identifier",
+        "goal_code": "personal",
+        "rank": "personal",
+        "created_at": "operational"
+      }
+    },
+
+    "profile_visibility": {
+      "purpose": "§S14. What a student chose to let other approved users see. Conservative by default.",
+      "columns": {
+        "user_id": "identifier",
+        "show_suburb": "personal",
+        "show_india_state": "personal",
+        "show_hometown": "personal",
+        "show_languages": "personal",
+        "show_communities": "personal",
+        "show_study": "personal",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "consents": {
+      "purpose": "§S15. Evidence of informed acceptance: policy type, version, timestamp. Append-only.",
+      "columns": {
+        "id": "identifier",
+        "user_id": "identifier",
+        "policy_type": "personal",
+        "version": "personal",
+        "accepted": "personal",
+        "accepted_at": "personal"
+      }
+    },
+
+    "verification_requests": {
+      "purpose": "§S16/§S17. A submitted registration and the decision on it.",
+      "columns": {
+        "id": "identifier",
+        "user_id": "identifier",
+        "state": "operational",
+        "method": "operational",
+        "submitted_at": "operational",
+        "reviewed_at": "operational",
+        "reviewer_id": "identifier",
+        "rejection_category": "personal",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "admin_users": {
+      "purpose": "§15.2. Who may operate the console. Unreachable from any client session.",
+      "columns": {
+        "user_id": "identifier",
+        "role": "operational",
+        "active": "operational",
+        "created_at": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "admin_audit_logs": {
+      "purpose": "§15.2. Every administrative action and the operator's reason. Append-only, and never shown to the person it concerns (§S17).",
+      "columns": {
+        "id": "identifier",
+        "actor_id": "identifier",
+        "action": "operational",
+        "target_user_id": "identifier",
+        "reason": "sensitive",
+        "metadata": "sensitive",
+        "created_at": "operational"
+      }
+    },
+
+    "feature_flags": {
+      "purpose": "§6.5. Server-managed switches. About the product, not about anybody.",
+      "columns": {
+        "key": "operational",
+        "enabled": "operational",
+        "description": "operational",
+        "updated_at": "operational"
+      }
+    },
+
+    "feature_votes": {
+      "purpose": "§S18. Which unbuilt feature a tester wants next. A stated preference, so it is personal even though the key is ours.",
+      "columns": {
+        "user_id": "identifier",
+        "feature_key": "personal",
+        "created_at": "operational"
+      }
+    },
+
+    "announcements": {
+      "purpose": "§S18. Messages we write to the beta. Our content, not anyone's data.",
+      "columns": {
+        "id": "operational",
+        "title": "operational",
+        "body": "operational",
+        "published_at": "operational",
+        "active": "operational"
+      }
+    },
+
+    "feedback": {
+      "purpose": "§S20. Structured reports from testers. The comment is free text and is treated as the highest-risk field in the product.",
+      "columns": {
+        "id": "identifier",
+        "user_id": "identifier",
+        "reference": "identifier",
+        "rating": "personal",
+        "category": "personal",
+        "comment": "sensitive",
+        "screenshot_path": "sensitive",
+        "created_at": "operational"
+      }
+    },
+
+    "push_tokens": {
+      "purpose": "§21.5. Device tokens, registered only. Nothing is sent during Milestone 3.",
+      "columns": {
+        "token": "identifier",
+        "user_id": "identifier",
+        "platform": "personal",
+        "created_at": "operational",
+        "last_seen_at": "operational"
+      }
+    },
+
+    "deletion_requests": {
+      "purpose": "§S22. A request to close an account, with an optional reason in the person's own words.",
+      "columns": {
+        "id": "identifier",
+        "user_id": "identifier",
+        "state": "operational",
+        "reason": "sensitive",
+        "requested_at": "operational",
+        "scheduled_for": "operational",
+        "completed_at": "operational"
+      }
+    },
+
+    "india_states": {
+      "purpose": "Catalogue (§S08). Identical for every user.",
+      "columns": {
+        "code": "reference",
+        "name": "reference",
+        "is_union_territory": "reference",
+        "sort_order": "reference",
+        "active": "reference"
+      }
+    },
+
+    "education_providers": {
+      "purpose": "Catalogue (§S06).",
+      "columns": {
+        "code": "reference",
+        "name": "reference",
+        "city": "reference",
+        "sort_order": "reference",
+        "active": "reference"
+      }
+    },
+
+    "languages": {
+      "purpose": "Catalogue (§S09).",
+      "columns": {
+        "code": "reference",
+        "name": "reference",
+        "active": "reference",
+        "sort_order": "reference",
+        "created_at": "reference"
+      }
+    },
+
+    "communities": {
+      "purpose": "Catalogue (§S10).",
+      "columns": {
+        "code": "reference",
+        "label": "reference",
+        "active": "reference",
+        "sort_order": "reference",
+        "created_at": "reference"
+      }
+    },
+
+    "interests": {
+      "purpose": "Catalogue (§S11).",
+      "columns": {
+        "code": "reference",
+        "label": "reference",
+        "category": "reference",
+        "active": "reference",
+        "sort_order": "reference",
+        "created_at": "reference"
+      }
+    },
+
+    "goals": {
+      "purpose": "Catalogue (§S12).",
+      "columns": {
+        "code": "reference",
+        "label": "reference",
+        "active": "reference",
+        "sort_order": "reference",
+        "created_at": "reference"
+      }
+    }
+  }
+}

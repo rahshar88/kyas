@@ -1,0 +1,18 @@
+{
+  "//": "Edge Functions run on Deno, not Node. ESLint ignores this directory because it cannot resolve jsr: specifiers; `deno check` is what validates it. Prettier still formats these files.",
+  "lock": false,
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "imports": {
+    "@supabase/supabase-js": "jsr:@supabase/supabase-js@^2"
+  },
+  "tasks": {
+    "check": "deno check **/*.ts"
+  },
+  "//check": "Glob, not a hand-written list: the previous explicit list silently omitted submit-registration and admin-review-registration when they were added, so neither was type-checked at all."
+}

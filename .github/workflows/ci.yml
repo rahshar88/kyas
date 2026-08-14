@@ -1,0 +1,240 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, beta]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Placeholder values so config resolution, prebuild and bundling can run without secrets.
+  # Real beta and production values live in EAS environment variables (§5.3).
+  EXPO_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-publishable-key-value
+  EXPO_PUBLIC_SENTRY_DSN: https://ci@ci.ingest.sentry.io/0
+  EXPO_PUBLIC_ANALYTICS_KEY: ci-placeholder-analytics-key
+  EXPO_PUBLIC_SUPPORT_URL: https://kyascene.app/support
+  EXPO_PUBLIC_PRIVACY_URL: https://kyascene.app/privacy
+  EXPO_PUBLIC_TERMS_URL: https://kyascene.app/terms
+
+jobs:
+  # Spec §5.4: "Every pull request runs formatting, lint, type-checking, unit tests and
+  # iOS/Android configuration validation."
+  quality:
+    name: Format, lint, types, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run format:check
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test
+        env:
+          EXPO_PUBLIC_ENVIRONMENT: development
+      - name: Consent policy version is consistent across app, function and SQL
+        run: node scripts/verify-consent-version.mjs
+
+      # §18: "App privacy answers match real SDK and data behaviour", and §16.4 makes a
+      # mismatch a release blocker. Both are stated as things a person should check, and the
+      # moment they stop being true is a migration adding one column — an ordinary change that
+      # nothing otherwise connects to a form filled in months earlier in App Store Connect.
+      - name: Privacy disclosure still describes the database
+        run: node scripts/verify-privacy-disclosure.mjs
+
+      # Jest runs on Node, which implements things Hermes does not. A green suite therefore
+      # says nothing about whether an API exists on the device — Intl.Segmenter passed 514
+      # tests and crashed the app on launch.
+      - name: No Hermes-unsupported APIs
+        run: node scripts/verify-hermes-support.mjs
+
+      - name: eas.json structure and secret scan
+        run: node scripts/verify-eas-config.mjs
+
+      # A build server has no .env, so a profile missing a variable fails at EAS's "Read app
+      # config" phase — twenty minutes of queue for an error message that names neither the
+      # variable nor the file. This resolves the config the way that phase does, in seconds.
+      - name: EAS profiles resolve on a clean checkout
+        run: node scripts/verify-eas-build-env.mjs
+
+  # The §5.4 "iOS/Android configuration validation" gate, and the strongest available
+  # evidence for §20's "iOS and Android builds compile from the same commit" without a Mac.
+  config-validation:
+    name: Native config (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [development, beta, production]
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve app config
+        working-directory: apps/mobile
+        run: pnpm exec expo config --type public --json > "${RUNNER_TEMP}/config.json"
+
+      - name: Verify identifiers, links and permissions
+        run: node scripts/verify-app-config.mjs "${RUNNER_TEMP}/config.json" "${{ matrix.environment }}"
+
+      # Pure file templating plus one npm tarball — needs neither Xcode nor the Android SDK.
+      - name: Generate iOS project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform ios --no-install --clean
+
+      - name: Generate Android project
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --no-install --clean
+
+      # Asserts the generated native files, not just the JS config object.
+      - name: Verify native output
+        run: node scripts/verify-native-output.mjs "${{ matrix.environment }}"
+
+      - name: Prebuild must not modify tracked files
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+            echo "::error::expo prebuild modified tracked files:"
+            git status --porcelain --untracked-files=no
+            git diff
+            exit 1
+          fi
+
+  # Runs Metro over the full graph for both platforms. Fails on any resolution error,
+  # bad import or missing asset — the class of bug a monorepo hoisting mistake causes.
+  bundle:
+    name: Bundle iOS and Android
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: beta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Export both platforms from one commit
+        working-directory: apps/mobile
+        run: pnpm exec expo export --platform ios --platform android --output-dir "${RUNNER_TEMP}/export"
+
+  # Spec §20: "Row Level Security tests prove that one user cannot read another user's
+  # private records." Runs against plain PostgreSQL — the policies are ordinary Postgres RLS,
+  # and supabase/tests/00-local-shim.sql recreates the only Supabase-specific pieces
+  # (auth.uid() and the three roles).
+  database:
+    name: Migrations and RLS
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations and assert row isolation
+        run: bash scripts/run-rls-tests.sh
+
+      # Edge Functions are Deno, so they are outside the Node typecheck and ESLint run.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Functions
+        working-directory: supabase/functions
+        run: deno task check
+
+      # The mobile app is not a browser and never sends a preflight, so a function missing
+      # CORS looks perfectly healthy until the first browser client calls it.
+      - name: Edge Functions answer the CORS preflight
+        run: node scripts/verify-function-cors.mjs
+
+  # §15's private console is a browser bundle: anything inside it is public. This builds it
+  # and proves it carries no credential beyond the publishable key.
+  admin-console:
+    name: Admin console
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_value
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run admin:build
+      - name: No privileged credential in the bundle
+        run: node scripts/verify-admin-bundle.mjs
+
+  # Spec §13.1: "Dependency and secret scanning in CI."
+  security:
+    name: Dependencies and secrets
+    runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: development
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+
+      # Fails loudly if anyone drifts off the Expo SDK 57 pinned versions.
+      #
+      # `npx`, not `pnpm exec`: expo-doctor is no longer bundled with the Expo CLI, so it is
+      # not on the project's binary path and `pnpm exec` reports "command not found" — which
+      # reads like a broken workflow rather than a moved tool.
+      - name: Expo SDK compatibility
+        working-directory: apps/mobile
+        run: npx --yes expo-doctor@latest
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,14 @@
+# S00 → S01: the app launches and reaches Welcome without trapping the user on a splash.
+appId: app.kyascene.beta
+name: Launch reaches Welcome
+---
+- launchApp:
+    clearState: true
+- assertVisible: 'KyaScene'
+# §S01 acceptance: the primary action is visible without scrolling.
+- assertVisible: 'Join the beta'
+- assertVisible: 'I already have an account'
+# §16.4 makes missing privacy or terms links a release blocker.
+- assertVisible: 'Privacy'
+- assertVisible: 'Terms'
+- assertVisible: 'Powered by 1818'

@@ -1,0 +1,20 @@
+{
+  /* React Native code, so it inherits Expo's base rather than @kyascene/config's Node
+     flavour — mixing @types/node and DOM libs with react-native's globals produces
+     hundreds of duplicate-declaration conflicts (Blob, Request, Response, XHR). The strict
+     flags below mirror packages/config/tsconfig.base.json by hand. */
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["jest"]
+  },
+  "include": ["src/**/*"]
+}
