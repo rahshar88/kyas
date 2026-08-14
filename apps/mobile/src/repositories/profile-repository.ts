@@ -51,6 +51,8 @@ export interface ProfileRepository {
   listInterests(): Promise<CatalogueEntry[]>;
   listGoals(): Promise<CatalogueEntry[]>;
   saveDisplayName(userId: string, displayName: string): Promise<void>;
+  uploadAvatar(userId: string, localUri: string): Promise<void>;
+  avatarUrl(avatarPath: string): Promise<string | null>;
   listChosenGoals(userId: string): Promise<string[]>;
   saveLanguages(userId: string, choices: LanguageChoice[]): Promise<void>;
   saveCommunities(userId: string, selection: CommunitySelection): Promise<void>;
@@ -141,6 +143,63 @@ export const profileRepository: ProfileRepository = {
       if (error) throw error;
 
       return (data ?? []).map((row) => row.goal_code);
+    });
+  },
+
+  /**
+   * §S13's "store a generated derivative" — the half that was missing.
+   *
+   * The screen has processed photos correctly since Milestone 2: square crop, compression,
+   * EXIF stripped on the device, GPS included. The result then stayed in the local draft
+   * forever, because no bucket existed and nothing uploaded. Found by a person looking at
+   * their own home screen and asking why it showed an initial instead of their face.
+   *
+   * The body is React Native's file-object FormData, not a Blob or ArrayBuffer. RN's fetch
+   * cannot produce an ArrayBuffer from a file:// URI, and its Blob support around uploads is
+   * where the notorious zero-byte-upload bugs live; the `{ uri, name, type }` form hands the
+   * file to the native networking layer, which streams it. Deliberately no `Intl`-style
+   * cleverness anywhere near this — it runs on Hermes.
+   *
+   * One object per person at a fixed name, upserted: replacing your photo replaces it, and
+   * the storage policies reduce to "the first path segment is you".
+   */
+  async uploadAvatar(userId: string, localUri: string): Promise<void> {
+    await guard(async () => {
+      const path = `${userId}/avatar.jpg`;
+
+      const body = new FormData();
+      // RN's FormData file object. The cast is because DOM types have no idea about it.
+      body.append('file', {
+        uri: localUri,
+        name: 'avatar.jpg',
+        type: 'image/jpeg',
+      } as unknown as Blob);
+
+      const { error: uploadError } = await getSupabase()
+        .storage.from('avatars')
+        .upload(path, body, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error } = await getSupabase()
+        .from('profiles')
+        .update({ avatar_path: path })
+        .eq('user_id', userId);
+      if (error) throw error;
+    });
+  },
+
+  /**
+   * A short-lived signed URL for a private object. The bucket is private because §S14's
+   * visibility controls are meaningless if the store underneath is public; an hour outlives
+   * any screen that requested it.
+   */
+  async avatarUrl(avatarPath: string): Promise<string | null> {
+    return guard(async () => {
+      const { data, error } = await getSupabase()
+        .storage.from('avatars')
+        .createSignedUrl(avatarPath, 3600);
+      if (error) throw error;
+      return data?.signedUrl ?? null;
     });
   },
 

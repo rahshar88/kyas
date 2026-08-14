@@ -128,6 +128,18 @@ export function BetaHomeScreen() {
     enabled: userId !== undefined,
   });
 
+  /**
+   * The bucket is private (§S14), so display goes through a short-lived signed URL. Keyed on
+   * the path so replacing the photo refetches, and disabled while there is nothing to sign —
+   * most accounts, since §S13 keeps the photo optional.
+   */
+  const avatarPath = profile.data?.avatarPath ?? null;
+  const avatar = useQuery({
+    queryKey: ['avatar-url', avatarPath],
+    queryFn: () => profileRepository.avatarUrl(avatarPath!),
+    enabled: avatarPath !== null,
+  });
+
   const vote = async (featureKey: string, currentlyVoted: boolean) => {
     if (userId === undefined) return;
 
@@ -167,7 +179,7 @@ export function BetaHomeScreen() {
         <KyaSceneWordmark />
 
         <View style={styles.greeting}>
-          <StudentAvatar displayName={name} testID="home-avatar" />
+          <StudentAvatar displayName={name} uri={avatar.data ?? undefined} testID="home-avatar" />
           <View style={styles.greetingText}>
             {/* §S18: "Personal greeting". The name arrived with S13; before that this screen
                 would have had nobody to greet. */}

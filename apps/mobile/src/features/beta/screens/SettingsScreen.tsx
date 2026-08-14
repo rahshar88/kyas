@@ -16,6 +16,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { env } from '@/config/env';
 import { useAuth } from '@/providers/AuthProvider';
+import { profileRepository } from '@/repositories/profile-repository';
 import { registrationRepository } from '@/repositories/registration-repository';
 
 /**
@@ -48,6 +49,13 @@ export function SettingsScreen() {
     queryKey: ['profile', userId],
     queryFn: () => registrationRepository.ensureProfile(userId!),
     enabled: userId !== undefined,
+  });
+
+  const avatarPath = profile.data?.avatarPath ?? null;
+  const avatar = useQuery({
+    queryKey: ['avatar-url', avatarPath],
+    queryFn: () => profileRepository.avatarUrl(avatarPath!),
+    enabled: avatarPath !== null,
   });
 
   const open = (url: string) => () => void Linking.openURL(url);
@@ -116,7 +124,11 @@ export function SettingsScreen() {
         <AppHeader title="Profile and settings" onBack={() => router.back()} />
 
         <View style={styles.identity}>
-          <StudentAvatar displayName={profile.data?.displayName ?? null} size={56} />
+          <StudentAvatar
+            displayName={profile.data?.displayName ?? null}
+            uri={avatar.data ?? undefined}
+            size={56}
+          />
           <View style={styles.identityText}>
             <Text style={[typography.bodyStrong, { color: theme.textPrimary }]}>
               {profile.data?.displayName ?? 'Your profile'}

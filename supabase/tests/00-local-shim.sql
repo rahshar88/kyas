@@ -59,3 +59,41 @@ grant usage on schema auth to authenticated, anon, service_role;
 grant usage on schema public to anon, authenticated, service_role;
 alter default privileges in schema public
   grant all on tables to anon, authenticated, service_role;
+
+-- ------------------------------------------------------------------ storage
+--
+-- The minimum of Supabase Storage needed for migrations that create buckets and policies to
+-- apply against plain PostgreSQL. Hosted Supabase ships this schema; the CI database does
+-- not. Only what the avatar migration touches is recreated — this is a shim, not a port.
+
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null,
+  public boolean not null default false,
+  file_size_limit bigint,
+  allowed_mime_types text[]
+);
+
+create table if not exists storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets (id),
+  name text,
+  owner uuid,
+  created_at timestamptz default now()
+);
+
+-- Hosted signature: splits 'user-id/avatar.jpg' into its folder steps.
+create or replace function storage.foldername(name text)
+returns text[] language sql immutable as $$
+  select (string_to_array(name, '/'))[1 : array_length(string_to_array(name, '/'), 1) - 1];
+$$;
+
+-- Hosted storage.objects ships with RLS enabled; the policies in the avatar migration are
+-- meaningless against a shim table that does not.
+alter table storage.objects enable row level security;
+
+grant usage on schema storage to authenticated, anon;
+grant select, insert, update, delete on storage.objects to authenticated;
+grant select on storage.buckets to authenticated;

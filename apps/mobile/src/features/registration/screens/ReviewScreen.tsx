@@ -141,6 +141,20 @@ export function ReviewScreen() {
        * the error. Registration could not be submitted by anyone.
        */
       if (draft.displayName) await profileRepository.saveDisplayName(userId, draft.displayName);
+
+      /**
+       * §S13: "store a generated derivative". The photo is optional, so its upload failing
+       * must not fail the registration — someone on a slow connection should not lose their
+       * submission over a picture they were allowed to skip. They can add one again from
+       * settings; every required write below still throws normally.
+       */
+      if (draft.photo?.localUri) {
+        try {
+          await profileRepository.uploadAvatar(userId, draft.photo.localUri);
+        } catch {
+          // Deliberate: optional data, required flow.
+        }
+      }
       if (draft.study) await registrationRepository.saveStudyDetails(userId, draft.study);
       if (draft.sydneyLocation) {
         await registrationRepository.saveSydneyLocation(userId, draft.sydneyLocation);

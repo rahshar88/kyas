@@ -373,4 +373,43 @@ begin
 end
 $$;
 
+-- --------------------------------------------------------------- avatar storage
+
+-- §S13's photos are the most personal thing this product holds, and §S14's visibility
+-- controls are meaningless if the object store underneath ignores them. One folder per
+-- person, named by user id; the folder name is the entire authorisation story.
+insert into storage.objects (bucket_id, name) values
+  ('avatars', 'bbbbbbbb-0000-0000-0000-000000000002/avatar.jpg');
+
+set local role authenticated;
+set local request.jwt.claim.sub = 'aaaaaaaa-0000-0000-0000-000000000001';
+
+do $$
+declare
+  visible integer;
+  blocked boolean := false;
+begin
+  raise notice 'S13 avatar storage';
+
+  insert into storage.objects (bucket_id, name)
+    values ('avatars', 'aaaaaaaa-0000-0000-0000-000000000001/avatar.jpg');
+  perform pg_temp.assert(true, 'a tester can put a photo in their own folder');
+
+  begin
+    insert into storage.objects (bucket_id, name)
+      values ('avatars', 'bbbbbbbb-0000-0000-0000-000000000002/impostor.jpg');
+  exception
+    when insufficient_privilege or check_violation then blocked := true;
+  end;
+  perform pg_temp.assert(blocked, 'but cannot put one in somebody else''s');
+
+  select count(*) into visible
+    from storage.objects
+   where name like 'bbbbbbbb%';
+  perform pg_temp.assert(visible = 0, 'and cannot see another tester''s photo at all');
+end
+$$;
+
+reset role;
+
 rollback;

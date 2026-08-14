@@ -21,6 +21,7 @@ import { guard } from './errors';
 export interface ProfileSummary {
   userId: string;
   displayName: string | null;
+  avatarPath: string | null;
   status: AccountStatus;
 }
 
@@ -64,7 +65,7 @@ export const registrationRepository: RegistrationRepository = {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('user_id, display_name, status')
+        .select('user_id, display_name, avatar_path, status')
         .eq('user_id', userId)
         .single();
       if (error) throw error;
@@ -72,6 +73,7 @@ export const registrationRepository: RegistrationRepository = {
       return {
         userId: data.user_id,
         displayName: data.display_name,
+        avatarPath: data.avatar_path,
         status: readStatus(data.status),
       };
     });

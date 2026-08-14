@@ -9,6 +9,7 @@ const mockReplace = jest.fn();
 const mockPush = jest.fn();
 
 const mockSaveDisplayName = jest.fn().mockResolvedValue(undefined);
+const mockUploadAvatar = jest.fn().mockResolvedValue(undefined);
 const mockSaveStudyDetails = jest.fn().mockResolvedValue(undefined);
 const mockSaveSydneyLocation = jest.fn().mockResolvedValue(undefined);
 const mockSaveIndiaBackground = jest.fn().mockResolvedValue(undefined);
@@ -21,6 +22,7 @@ const mockSubmit = jest.fn().mockResolvedValue({ outcome: 'submitted' });
 const mockDraft: RegistrationDraft = {
   ...emptyDraft('2026-08-13T00:00:00.000Z'),
   displayName: 'Asha',
+  photo: { localUri: 'file:///asha.jpg' },
   study: {
     provider: 'usyd',
     course: 'Masters in AI',
@@ -67,6 +69,7 @@ jest.mock('@/repositories/registration-repository', () => ({
 jest.mock('@/repositories/profile-repository', () => ({
   profileRepository: {
     saveDisplayName: (...args: unknown[]) => mockSaveDisplayName(...args),
+    uploadAvatar: (...args: unknown[]) => mockUploadAvatar(...args),
     saveLanguages: (...args: unknown[]) => mockSaveLanguages(...args),
     saveCommunities: jest.fn().mockResolvedValue(undefined),
     saveInterests: (...args: unknown[]) => mockSaveInterests(...args),
@@ -92,6 +95,7 @@ describe('S16 — Review profile', () => {
       mockReplace,
       mockPush,
       mockSaveDisplayName,
+      mockUploadAvatar,
       mockSaveStudyDetails,
       mockSaveSydneyLocation,
       mockSaveIndiaBackground,
@@ -119,6 +123,7 @@ describe('S16 — Review profile', () => {
 
     await waitFor(() => {
       expect(mockSaveDisplayName).toHaveBeenCalledWith('user-1', 'Asha');
+      expect(mockUploadAvatar).toHaveBeenCalledWith('user-1', 'file:///asha.jpg');
       expect(mockSaveStudyDetails).toHaveBeenCalledWith('user-1', mockDraft.study);
       expect(mockSaveSydneyLocation).toHaveBeenCalledWith('user-1', mockDraft.sydneyLocation);
       expect(mockSaveIndiaBackground).toHaveBeenCalledWith('user-1', mockDraft.indiaBackground);
@@ -132,6 +137,23 @@ describe('S16 — Review profile', () => {
     await waitFor(() => {
       expect(mockSaveLanguages).toHaveBeenCalledWith('user-1', mockDraft.languages);
       expect(mockSaveInterests).toHaveBeenCalledWith('user-1', mockDraft.interests);
+      expect(mockSubmit).toHaveBeenCalled();
+      expect(mockReplace).toHaveBeenCalledWith('/status');
+    });
+  });
+
+  /**
+   * §S13 keeps the photo optional, so its upload failing must not fail the submission —
+   * someone on a slow connection must not lose a finished registration over a picture they
+   * were allowed to skip. This is the assertion that keeps that guarantee from rotting.
+   */
+  it('still submits when the optional photo upload fails', async () => {
+    mockUploadAvatar.mockRejectedValueOnce(new Error('storage unreachable'));
+
+    const view = await renderWithProviders(<ReviewScreen />);
+    await fireEvent.press(view.getByTestId('review-submit'));
+
+    await waitFor(() => {
       expect(mockSubmit).toHaveBeenCalled();
       expect(mockReplace).toHaveBeenCalledWith('/status');
     });
