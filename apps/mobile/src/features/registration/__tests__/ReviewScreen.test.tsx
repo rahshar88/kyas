@@ -159,6 +159,23 @@ describe('S16 — Review profile', () => {
     });
   });
 
+  /**
+   * The failure must also be *said*. Swallowing it silently cost a debugging round: a null
+   * avatar_path with no visible cause is indistinguishable from the upload never having been
+   * attempted.
+   */
+  it('says so when the photo upload fails, instead of failing silently', async () => {
+    mockUploadAvatar.mockRejectedValueOnce(new Error('Bucket not found'));
+    mockSubmit.mockResolvedValueOnce({ outcome: 'incomplete', missing: [] });
+
+    const view = await renderWithProviders(<ReviewScreen />);
+    await fireEvent.press(view.getByTestId('review-submit'));
+
+    expect(await view.findByTestId('review-photo-notice')).toHaveTextContent(
+      /could not be uploaded/,
+    );
+  });
+
   /** §S16 is for inspecting answers, which requires them to be readable. */
   it('shows what the student chose, not the codes it is stored under', async () => {
     const view = await renderWithProviders(<ReviewScreen />);

@@ -22,6 +22,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DiagnosticDetail } from '@/components/DiagnosticDetail';
 import { useAuth } from '@/providers/AuthProvider';
 import { useDraft } from '@/features/registration/hooks/useDraft';
 import { profileRepository } from '@/repositories/profile-repository';
@@ -106,6 +107,9 @@ export function ReviewScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [missing, setMissing] = useState<MissingStep[]>([]);
   const [error, setError] = useState<string | undefined>();
+  const [photoNotice, setPhotoNotice] = useState<string | undefined>();
+  /** The original throw from a failed photo upload, for DiagnosticDetail on internal builds. */
+  const [photoCause, setPhotoCause] = useState<unknown>();
 
   useEffect(() => {
     analytics.track('onboarding_step_viewed', { screen: 'S16' });
@@ -151,8 +155,18 @@ export function ReviewScreen() {
       if (draft.photo?.localUri) {
         try {
           await profileRepository.uploadAvatar(userId, draft.photo.localUri);
-        } catch {
-          // Deliberate: optional data, required flow.
+          setPhotoNotice(undefined);
+        } catch (caught) {
+          /**
+           * Still deliberate: optional data must not block a required flow. But swallowing it
+           * *silently* cost a debugging round — a null avatar_path with no visible cause is
+           * indistinguishable from the upload never being attempted. So the failure is said
+           * out loud, with the technical detail on internal builds, and the flow continues.
+           */
+          setPhotoNotice(
+            'Your photo could not be uploaded — everything else was saved. You can try again later.',
+          );
+          setPhotoCause(caught);
         }
       }
       if (draft.study) await registrationRepository.saveStudyDetails(userId, draft.study);
@@ -344,6 +358,19 @@ export function ReviewScreen() {
       </View>
 
       <View style={styles.actions}>
+        {photoNotice === undefined ? null : (
+          <>
+            {/* §6.6: a failed optional upload is a designed state, not a silent one. */}
+            <Text
+              style={[typography.caption, { color: theme.cautionText }]}
+              accessibilityRole="alert"
+              testID="review-photo-notice"
+            >
+              {photoNotice}
+            </Text>
+            <DiagnosticDetail error={photoCause} testID="review-photo-diagnostic" />
+          </>
+        )}
         <PrimaryButton
           label="Submit for approval"
           onPress={() => void onSubmit()}
