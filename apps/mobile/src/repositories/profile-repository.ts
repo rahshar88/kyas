@@ -154,11 +154,13 @@ export const profileRepository: ProfileRepository = {
    * forever, because no bucket existed and nothing uploaded. Found by a person looking at
    * their own home screen and asking why it showed an initial instead of their face.
    *
-   * The body is React Native's file-object FormData, not a Blob or ArrayBuffer. RN's fetch
-   * cannot produce an ArrayBuffer from a file:// URI, and its Blob support around uploads is
-   * where the notorious zero-byte-upload bugs live; the `{ uri, name, type }` form hands the
-   * file to the native networking layer, which streams it. Deliberately no `Intl`-style
-   * cleverness anywhere near this — it runs on Hermes.
+   * The body is the file's raw bytes, not FormData. React Native's classic
+   * `{ uri, name, type }` FormData part is a convention of RN's *old* networking stack —
+   * Expo's WinterCG fetch, which is the global `fetch` on this SDK and therefore what
+   * supabase-js uses, serialises FormData itself and throws
+   * `Unsupported FormDataPart implementation` on those parts. Seen on a real phone, in
+   * exactly those words. Bytes avoid the question: `ArrayBuffer.isView` is a body type
+   * every fetch supports, and the avatar is ~100KB of already-compressed JPEG.
    *
    * One object per person at a fixed name, upserted: replacing your photo replaces it, and
    * the storage policies reduce to "the first path segment is you".
@@ -167,17 +169,14 @@ export const profileRepository: ProfileRepository = {
     await guard(async () => {
       const path = `${userId}/avatar.jpg`;
 
-      const body = new FormData();
-      // RN's FormData file object. The cast is because DOM types have no idea about it.
-      body.append('file', {
-        uri: localUri,
-        name: 'avatar.jpg',
-        type: 'image/jpeg',
-      } as unknown as Blob);
+      // Lazy so importing the repository never touches native modules — Jest and any
+      // future non-Expo runtime construct this module without expo-file-system existing.
+      const { File } = await import('expo-file-system');
+      const bytes = await new File(localUri).bytes();
 
       const { error: uploadError } = await getSupabase()
         .storage.from('avatars')
-        .upload(path, body, { upsert: true });
+        .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
       if (uploadError) throw uploadError;
 
       const { error } = await getSupabase()
