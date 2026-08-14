@@ -17,8 +17,20 @@
  *
  * The fix is to give both commands one source of truth. This resolves the build profile's
  * env exactly as EAS merges it — `extends` chain included — and injects it into the child
- * process. Expo's dotenv loader does not overwrite variables that are already set, so this
- * wins over `.env` rather than fighting it.
+ * process, which Metro's transformer then inlines.
+ *
+ * ## And why it clears the cache
+ *
+ * `babel-preset-expo` inlines `process.env.EXPO_PUBLIC_*` **at transform time**, and Metro
+ * caches transformed modules. Change a variable without clearing that cache and the next
+ * bundle keeps the previous value — silently, with no warning anywhere.
+ *
+ * That is not theoretical. Exporting this app with CI placeholder values and then again with
+ * the real ones produced a second bundle still containing
+ * `https://ci-placeholder.supabase.co`. A bundle can therefore be published pointing at a
+ * project that does not exist, or missing a value entirely — and a missing one throws at
+ * launch, because `env.ts` validates at module scope. `--clear-cache` costs about a minute
+ * and removes the whole class.
  *
  * A conflict is still reported, because a `.env` disagreeing with `eas.json` means somebody's
  * mental model is wrong even when the outcome is now correct.
@@ -110,12 +122,14 @@ const subject =
 
 console.log(`→ ${profileName} → branch "${branch}" with env from eas.json`);
 for (const key of Object.keys(profileEnv).sort()) console.log(`    ${key}`);
+console.log('  (clearing the Metro cache — a stale transform keeps the previous env values)');
 
 const result = spawnSync(
   'npx',
   [
     'eas-cli@latest',
     'update',
+    '--clear-cache',
     '--branch',
     branch,
     '--environment',

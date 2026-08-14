@@ -5,9 +5,19 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// Importing the env module here makes a misconfigured build fail at startup with the
-// validation message rather than somewhere deep inside a feature (§5.3).
-import '@/config/env';
+/**
+ * The environment is read here rather than imported for its side effect (§5.3).
+ *
+ * `env.ts` validates at module scope and throws when a value is missing. On a build that is
+ * exactly right — EAS fails at "Read app config" and names every missing key. On an
+ * over-the-air update nothing reads the config first, so the same throw happened during this
+ * file's imports, before anything rendered, and the app closed instantly: no message, nothing
+ * to screenshot, nothing to report but "it opens and shuts".
+ *
+ * `env-status` catches it so the failure can be rendered instead.
+ */
+import { configurationError } from '@/config/env-status';
+import { ConfigurationErrorScreen } from '@/features/launch/screens/ConfigurationErrorScreen';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { QueryProvider } from '@/providers/QueryProvider';
 import { installGlobalErrorHandler } from '@/services/error-reporting';
@@ -25,6 +35,15 @@ installGlobalErrorHandler();
  * goes through a repository that TanStack Query will eventually cache.
  */
 export default function RootLayout() {
+  /**
+   * Before the providers, because every one of them reads configuration this bundle does not
+   * have. Rendering them first would replace a legible message with a second crash.
+   */
+  if (configurationError !== undefined) {
+    void SplashScreen.hideAsync();
+    return <ConfigurationErrorScreen message={configurationError} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
