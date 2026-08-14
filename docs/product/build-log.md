@@ -650,10 +650,66 @@ fragile file in the app without once being run on a device. The fix was subtract
 launch path. And a crash log from the device was worth more than three days of reasoning from
 diffs — it should always be the first ask, not the last.
 
+### The avatar afternoon, 14 August — four hours for one photograph
+
+Recorded at the founder's request, because the cost was real and the causes are worth naming.
+The photo now uploads, displays on the home screen and in settings, and can be changed in one
+tap. Getting there took three distinct failures stacked on top of each other, each masking the
+next:
+
+**Failure one: the upload never existed.** S13 processed photos correctly from Milestone 2 —
+square crop, compression, EXIF stripped — and then kept the result in the local draft forever.
+`avatar.ts` even said so: "Nothing uploads — that belongs to submission", and submission never
+did. No bucket, no upload call, no `avatar_path`. Found only when a person looked at their own
+home screen and asked why it showed an initial. **No test could have caught it, because nothing
+was broken — the feature was simply absent.** Fixed by building the storage bucket, policies,
+the upload, and signed-URL display.
+
+**Failure two: the upload was built behind an unreachable button.** The upload fired only when
+S16's Submit was pressed — correct during onboarding, meaningless for an approved member whose
+only route back was "Edit your answers", five screens deep, ending at a Submit for a
+registration already in. A real person stopped at "Use this photo" — reasonably, since it
+reads like a save — and the bucket stayed empty. Diagnosed only after **the bundle-identity
+footer** (the founder's own suggestion) proved the phone was running current code, eliminating
+the stale-bundle theory that had burned a full publish cycle. Fixed by putting a
+**Change photo action in Settings that uploads the moment the picture is picked.**
+
+**Failure three: the upload could never have worked anyway.** First real tap on the new button
+produced `StorageUnknownError · Unsupported FormDataPart implementation` — on screen, in the
+diagnostic detail, within seconds. React Native's classic `{ uri, name, type }` FormData part
+is a convention of RN's old networking stack; Expo SDK 57 installs its own WinterCG `fetch` as
+the global, supabase-js uses the global, and that fetch serialises FormData itself and refuses
+RN's part shape. **Node-based Jest cannot see this** — it is the Hermes/`Intl.Segmenter` lesson
+in networking form: the runtime on the phone is not the runtime in CI. Fixed by uploading raw
+bytes (`expo-file-system` `File.bytes()` → `ArrayBuffer.isView` body, a shape every fetch
+supports). `@expo/fingerprint` hashed identically before and after adding the dependency —
+`expo` already ships it — so the fix went over the air.
+
+**Why it took four hours and what would have made it one:**
+
+- The first two hours were spent on failure two without knowing failures one and three were
+  underneath it. Stacked causes are why "try it again" kept producing the same symptom for
+  different reasons.
+- Every diagnosis that came from a **screenshot of an on-screen error** took minutes; every
+  diagnosis that came from reasoning about what the phone might be doing took an hour. The
+  loud-failure notice and `DiagnosticDetail` paid for themselves on their first day. The
+  earlier silent `catch` around the upload had cost a full publish-and-test round by saying
+  nothing.
+- The bundle-identity footer turned "is the phone even running my fix?" from a recurring
+  twenty-minute doubt into a glance. It answered the question three times in one afternoon —
+  including once catching the phone genuinely running the *previous* update.
+
+**The lesson, stated once:** a feature is not done when the code exists — it is done when a
+device has performed it. Everything above shipped in a state every local check called green:
+538 tests, typecheck, lint, and two of three failures were invisible to all of them. The
+checks that actually found things were a person with a phone, an error rendered on screen,
+and an identity line saying which code was running.
+
 ### Confirmed working on device, 14 August (evening)
 
 The full Milestone 3 surface, on a real iPhone over a real network: beta home greeting by
-name with the avatar initial, ranked goals, the empty announcements state, feature voting with
+name with the avatar — **the founder's actual photograph, uploaded from Settings and rendered
+from a signed URL** — ranked goals, the empty announcements state, feature voting with
 "Coming soon" labels and vote state surviving refresh, **referral issuance** (first mint
 through `ensure-referral-invite` — code shown, 3 of 3 seats), the light-mode `accentText`
 palette, and push registration storing a token. A second tester is being onboarded via
