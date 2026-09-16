@@ -251,6 +251,20 @@ export function BetaHomeScreen() {
           </View>
         ) : null}
 
+        {/* ADR-0007: the public directory. Real and open to everyone, so no flag and no
+            vote — distinct from the 'scene_feed_enabled' card below, which is the future
+            social feed and still a promise. */}
+        <View style={styles.section}>
+          <Text style={[typography.label, { color: theme.textSecondary }]}>Explore</Text>
+          <FeatureCard
+            title="The Scene directory"
+            description="Indian places and services around Sydney. Open to everyone."
+            state="available"
+            onPress={() => router.push('/scene')}
+            testID="home-scene-directory"
+          />
+        </View>
+
         <View style={styles.section}>
           <Text style={[typography.label, { color: theme.textSecondary }]}>Coming to KyaScene</Text>
           <Text style={[typography.caption, { color: theme.textSecondary }]}>

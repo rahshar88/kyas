@@ -18,6 +18,11 @@ export interface AnalyticsProperties {
   /** Machine-readable success/failure code, e.g. an AppErrorCode. */
   outcomeCode?: string;
   /**
+   * Which audience saw a public surface (ADR-0007): 'public' means no session, 'student'
+   * means signed in. A two-value enum chosen by us — it can never narrow to a person.
+   */
+  audience?: 'public' | 'student';
+  /**
    * Which unbuilt feature a tester voted for (§S18).
    *
    * A key from the hard-coded list on the beta home — `discovery_enabled`, `events_enabled`

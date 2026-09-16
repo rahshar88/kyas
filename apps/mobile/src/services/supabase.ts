@@ -192,6 +192,31 @@ type InviteRow = {
   created_at: string;
 };
 
+/**
+ * Milestone 5 rows (ADR-0007). The only tables an anonymous client can read — the public
+ * Scene directory. Deliberately person-free: no user_id column exists on either.
+ */
+type PlaceCategoryRow = {
+  code: string;
+  label: string;
+  active: boolean;
+  sort_order: number;
+};
+
+type PlaceRow = {
+  id: string;
+  name: string;
+  category_code: string;
+  suburb: string;
+  state_code: string;
+  address: string | null;
+  url: string | null;
+  phone: string | null;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -326,6 +351,18 @@ export type Database = {
       };
       invites: {
         Row: InviteRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      place_categories: {
+        Row: PlaceCategoryRow;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      places: {
+        Row: PlaceRow;
         Insert: never;
         Update: never;
         Relationships: [];

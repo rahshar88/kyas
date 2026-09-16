@@ -44,6 +44,10 @@ export const ANALYTICS_EVENTS = [
   'privacy_updated',
   'account_deletion_started',
   'account_deletion_requested',
+
+  // The Scene — the public directory (ADR-0007). Reviewed against §14.3: carries only
+  // whether the viewer had a session, never a query, a place or a person.
+  'scene_viewed',
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
