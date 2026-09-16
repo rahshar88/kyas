@@ -58,6 +58,7 @@ run_test "${REPO_ROOT}/supabase/tests/rls.test.sql"
 run_test "${REPO_ROOT}/supabase/tests/redeem-invite.test.sql"
 run_test "${REPO_ROOT}/supabase/tests/m2.test.sql"
 run_test "${REPO_ROOT}/supabase/tests/m3.test.sql"
+run_test "${REPO_ROOT}/supabase/tests/m5.test.sql"
 
 # --------------------------------------------------------------- concurrency
 #
