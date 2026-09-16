@@ -21,6 +21,15 @@ adding anything to the beta.
 Concept artwork communicates brand direction and long-term ambition. It is **not** an
 implementation specification. Where a concept image conflicts with the spec, the spec wins.
 
+## Amendment — the public Scene (ADR-0007, 16 Sep 2026)
+
+The founder expanded scope beyond the original spec: KyaScene carries a **public directory
+of Indian places and services** (the Scene), readable without an account. That amendment is
+bounded by [ADR-0007](../decisions/0007-public-scene.md), and the boundary is absolute:
+**places are public, people are never public**. Nothing person-shaped may ever be reachable
+anonymously, "no public posting", "no business advertising" and the §13 membership-privacy
+rules all still stand, and `supabase/tests/m5.test.sql` enforces the boundary on every run.
+
 ## Explicit P0 non-goals (§3.3)
 
 Do **not** build these into the registration beta:

@@ -739,6 +739,27 @@ that turns a dormant column into a live one does.
 
 ---
 
+## Milestone 5 — the Scene, a public side
+
+Resumed 16 September after a month away. The founder expanded scope: KyaScene gains a public
+directory of Indian places & services in Australia — the mechanism was debated and locked the
+same day, and the whole of it fits in one sentence: **sign-in state decides the front door,
+places are public, people are never public.** [ADR-0007](../decisions/0007-public-scene.md)
+carries the reasoning and the rejected alternatives (a chooser screen; two apps).
+
+Built so far, each slice verified before the next:
+
+- **The tables** — `place_categories` and `places`, the first anon-readable tables in the
+  database: read-only, active rows only. `m5.test.sql` proves the blast radius every run:
+  anon reads exactly two tables and is refused at the grant layer on all sixteen
+  person-shaped ones.
+- **The screens** — `(scene)` group with no guard; the same routes serve a stranger (who
+  gets the one door into the student side) and a student (who gets Back). Starter Sydney
+  seed marked for founder review — the directory's accuracy is a founder responsibility.
+- **Held back deliberately**: the launch-routing switch (signed-out → Scene) ships alone,
+  after the screens are device-verified — the launch-path rule from 14 August, applied
+  before it can bite a second time.
+
 ## Tooling added along the way
 
 | Capability                                                    | Where                                               |

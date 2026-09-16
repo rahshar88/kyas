@@ -33,6 +33,13 @@ the launch screen and `(public)/welcome` — §21.2 limits it to exactly that.
 | `(approved)/settings`             | S21 Profile and settings            | M3     |
 | `(approved)/notifications`        | Notification preferences (§S21)     | M3     |
 | `(approved)/delete-account`       | S22 Delete account                  | M3     |
+| `(scene)/scene`                   | The Scene — public directory        | M5     |
+| `(scene)/place/[id]`              | A single Scene listing              | M5     |
+
+The `(scene)` group (ADR-0007) is the one group with **no auth guard**: both a stranger and a
+signed-in student use the same routes, and each screen reads the session itself to decide
+between a "Students — sign in" door and a Back control. Once the M5 routing switch ships,
+the launch route sends a signed-out user to `/scene` instead of `(public)/welcome`.
 
 S04 (beta invitation) sits in the registration flow and is added in Milestone 1.
 

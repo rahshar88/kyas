@@ -11,6 +11,7 @@ Record."_
 | [0004](0004-eas-project-ownership.md)  | EAS project ownership and untethered distribution   | accepted |
 | [0005](0005-transactional-email.md)    | Transactional email provider (Resend)               | accepted |
 | [0006](0006-referral-code-storage.md)  | Storing referral codes in readable form             | accepted |
+| [0007](0007-public-scene.md)           | The Scene: public places, never public people       | accepted |
 
 ## Decisions the coding agent may NOT make alone (§22)
 
