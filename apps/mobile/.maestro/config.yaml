@@ -1,0 +1,9 @@
+# Maestro end-to-end configuration (spec §4.4, §16.2).
+#
+# The Maestro runner is NOT installed in CI — it needs a simulator or emulator, which the
+# Linux CI runner does not have. Flows are authored here from Milestone 0 so that later
+# milestones extend a working harness instead of inventing one, and so the §16.2 scenario
+# list has somewhere to live. See .maestro/README.md to run them locally.
+appId: app.kyascene.beta
+flows:
+  - ./flows/*.yaml
